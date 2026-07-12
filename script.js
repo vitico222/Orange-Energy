@@ -46,6 +46,13 @@ function saveUsers() {
   localStorage.setItem("ifl_users", JSON.stringify(users));
 }
 
+// Convierte caracteres especiales en texto seguro para prevenir inyecciones de código (XSS)
+function sanitizeInput(text) {
+  const element = document.createElement("div");
+  element.innerText = text;
+  return element.innerHTML;
+}
+
 // Control de visibilidad de los botones en la barra superior
 function updateAdminNavButtons(view) {
   const btnBackLogin = document.getElementById("admin-back-btn");
@@ -116,7 +123,7 @@ function adminEditStudent(key) {
   updateAdminNavButtons("manage");
 
   let html = `
-        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Managing: ${student.name}</h3>
+        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Managing: ${sanitizeInput(student.name)}</h3>
         
         <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <span style="font-size: 1.5rem; font-weight: bold;">
@@ -127,7 +134,7 @@ function adminEditStudent(key) {
             </button>
         </div>
         
-        <div id="manage-list";>
+        <div id="manage-list">
     `;
 
   for (let i = 1; i <= 30; i++) {
@@ -186,7 +193,9 @@ function executeReset() {
   if (currentEditingStudentKey && users[currentEditingStudentKey]) {
     const studentName = users[currentEditingStudentKey].name;
     if (
-      confirm(`Reset ALL progress for ${studentName}? This cannot be undone.`)
+      confirm(
+        `Reset ALL progress for ${sanitizeInput(studentName)}? This cannot be undone.`,
+      )
     ) {
       users[currentEditingStudentKey].progress = {};
       saveUsers();
@@ -202,7 +211,7 @@ window.viewStudentBoard = function (key) {
   updateAdminNavButtons("board");
 
   let html = `
-        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${student.name}</h3>
+        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${sanitizeInput(student.name)}</h3>
         <div id="student-board-view" class="game-board" style="margin: 20px auto; max-width: 1250px;"></div>
     `;
   document.getElementById("students-list").innerHTML = html;
@@ -241,7 +250,8 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  let name = document.getElementById("signup-name").value.trim();
+  // Al registrar, sanitizamos el nombre para asegurarnos de que persista limpio en el LocalStorage
+  let name = sanitizeInput(document.getElementById("signup-name").value.trim());
   let pin = document.getElementById("signup-pin").value.trim();
 
   if (pin.length !== 4) return alert("PIN must be 4 digits (DDMM)");
@@ -303,7 +313,7 @@ function renderStudentsList(filter = "") {
       div.className = "student-row";
       div.innerHTML = `
                 <div class="student-info">
-                    <strong style="font-size: 1.8rem; display: block;">${student.name}</strong>
+                    <strong style="font-size: 1.8rem; display: block;">${sanitizeInput(student.name)}</strong>
                     <span style="color: #aaa; margin-top: 6px; font-size: 1.1rem; display: block;">
                         Unlocked: <strong>${unlockedCount}/30</strong>
                     </span>
