@@ -423,10 +423,26 @@ document
   .getElementById("search-students")
   .addEventListener("input", (e) => window.renderStudentsList(e.target.value));
 
+// Abrir el modal
 document.getElementById("admin-btn").addEventListener("click", () => {
-  const name = prompt("Admin Username:");
-  const pin = prompt("Admin PIN:");
+  document.getElementById("admin-login-modal").style.display = "flex";
+});
+
+// Cerrar el modal (Cancelar)
+document.getElementById("admin-login-cancel").addEventListener("click", () => {
+  document.getElementById("admin-login-modal").style.display = "none";
+});
+
+// Lógica de validación dentro del modal
+document.getElementById("admin-login-submit").addEventListener("click", () => {
+  const name = document.getElementById("admin-user-input").value;
+  const pin = document.getElementById("admin-pin-input").value;
+
   if (name === ADMIN_USER && pin === ADMIN_PIN) {
+    document.getElementById("admin-login-modal").style.display = "none";
+    // Limpiar inputs
+    document.getElementById("admin-user-input").value = "";
+    document.getElementById("admin-pin-input").value = "";
     window.showAdminPanel();
   } else {
     alert("Incorrect admin credentials.");
