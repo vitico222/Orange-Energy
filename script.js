@@ -62,30 +62,27 @@ const db = getDatabase(app);
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = {};
-let isFirebaseLoaded = false; // Control de carga definitivo
+let users = {}; // Inicializado siempre listo como objeto
 
-// 1. CARGA INICIAL FORZADA: Trae los datos de inmediato al cargar la app
 const usersRef = ref(db, "users");
+
+// Carga inicial inmediata de datos existentes
 get(usersRef)
   .then((snapshot) => {
-    users = snapshot.val() || {};
-    isFirebaseLoaded = true;
-    console.log("¡Firebase inicializado correctamente!");
+    if (snapshot.exists()) {
+      users = snapshot.val() || {};
+    }
   })
   .catch((error) => {
-    console.error("Error en la carga inicial de Firebase:", error);
-    // Fail-safe: Desbloqueamos la app con un objeto vacío para que no se congele la UI si falla la red
-    users = {};
-    isFirebaseLoaded = true;
+    console.error("Error al sincronizar Firebase al inicio:", error);
   });
 
-// 2. ESCUCHA EN TIEMPO REAL: Sincroniza cambios posteriores de forma pasiva
+// Escucha activa de cambios en tiempo real
 onValue(usersRef, (snapshot) => {
-  if (!isFirebaseLoaded) return; // Evitamos pisar datos durante la carga inicial
-
   const data = snapshot.val();
-  users = data || {};
+  if (data) {
+    users = data;
+  }
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -108,8 +105,6 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
-  if (!isFirebaseLoaded) return;
-
   const usersRef = ref(db, "users");
   set(usersRef, users)
     .then(() => console.log("¡Datos guardados con éxito en Firebase!"))
@@ -302,8 +297,6 @@ document
 // ====================== LOGIN & SIGNUP ======================
 document.getElementById("login-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  if (!isFirebaseLoaded)
-    return alert("Connecting to server... Please wait a second.");
 
   let name = document.getElementById("login-name").value.trim();
   let pin = document.getElementById("login-pin").value.trim();
@@ -323,8 +316,6 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  if (!isFirebaseLoaded)
-    return alert("Connecting to server... Please wait a second.");
 
   let name = sanitizeInput(document.getElementById("signup-name").value.trim());
   let pin = document.getElementById("signup-pin").value.trim();
@@ -366,10 +357,6 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 
 // ====================== ADMIN MAIN VIEW ======================
 window.showAdminPanel = function () {
-  if (!isFirebaseLoaded) {
-    alert("Data is downloading from Firebase. Please wait a moment.");
-    return;
-  }
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
   document
@@ -382,8 +369,6 @@ window.showAdminPanel = function () {
 window.renderStudentsList = function (filter = "") {
   const container = document.getElementById("students-list");
   container.innerHTML = "<h3>Registered Students</h3>";
-
-  if (!isFirebaseLoaded) return;
 
   Object.keys(users).forEach((key) => {
     const student = users[key];
