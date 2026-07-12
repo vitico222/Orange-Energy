@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orange Energy Board</title>
+    <link rel="icon" href="./assets/IFL favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <img src="./assets/IFL-Logo.png" alt="IFL Logo" class="logo" />
+        <h1>Orange Energy Board</h1>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <!-- Login Screen -->
+      <div id="login-screen" class="screen active">
+        <div class="login-container">
+          <h2>Welcome to Orange Energy Board</h2>
+          <form id="login-form">
+            <input
+              type="text"
+              id="login-name"
+              placeholder="Full Name"
+              required
+            />
+            <input
+              type="text"
+              id="login-pin"
+              maxlength="4"
+              placeholder="Birthday (DDMM)"
+              required
+            />
+            <button type="submit">Login</button>
+          </form>
+          <button id="signup-btn" class="secondary-btn">Sign Up</button>
+          <button id="admin-btn" class="admin-link">Admin Mode</button>
+        </div>
+      </div>
+
+      <!-- Sign Up Screen -->
+      <div id="signup-screen" class="screen">
+        <div class="login-container">
+          <h2>Create New Student</h2>
+          <form id="signup-form">
+            <input
+              type="text"
+              id="signup-name"
+              placeholder="Full Name"
+              required
+            />
+            <input
+              type="text"
+              id="signup-pin"
+              maxlength="4"
+              placeholder="Birthday DDMM"
+              required
+            />
+            <button type="submit">Create Account</button>
+          </form>
+          <button id="back-to-login" class="secondary-btn">
+            Back to Login
+          </button>
+        </div>
+      </div>
+
+      <!-- Board Screen -->
+      <div id="board-screen" class="screen">
+        <div class="student-header">
+          <h2 id="student-name-display"></h2>
+          <button id="logout-btn">Logout</button>
+        </div>
+
+        <div class="board-container">
+          <div id="game-board" class="game-board"></div>
+        </div>
+      </div>
+
+      <!-- Admin Panel -->
+      <div id="admin-screen" class="screen">
+        <div class="admin-header">
+          <h2 class="admin-panel">Admin Panel - Orange Energy Board</h2>
+          <!-- Cambiado al HTML: Zona superior de botones de navegación ordenados estrictamente -->
+          <div
+            class="admin-nav-actions"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            <button id="admin-back-btn" class="nav-btn">Back to Login</button>
+            <button
+              id="admin-close-btn"
+              class="nav-btn"
+              style="display: none; background: #555"
+            >Back to Manage
+            </button>
+            <button
+              id="admin-reset-btn"
+              class="nav-btn"
+              style="display: none; background: #d32f2f"
+            >
+              Reset Progress
+            
+          </div>
+        </div>
+        <input
+          type="text"
+          id="search-students"
+          placeholder="Search students..."
+        />
+        <div id="students-list"></div>
+      </div>
+    </main>
+
+    <!-- Casilla Popup -->
+    <div id="casilla-modal" class="modal">
+      <div class="modal-content">
+        <span id="close-modal" class="close">&times;</span>
+        <h3 id="modal-title"></h3>
+        <p id="modal-description"></p>
+      </div>
+    </div>
+
+    <footer>
+      <p>Developed by Victor M. Sáa © 2026 | IFL Idiomas - Orange Energy</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
