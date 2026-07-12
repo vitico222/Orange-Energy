@@ -62,11 +62,17 @@ const db = getDatabase(app);
 let currentUser = null;
 let currentEditingStudentKey = null;
 let users = {};
+let isFirebaseInitialized = false; // Bandera para proteger tus datos de borrados accidentales
 
+// Escucha activa de la base de datos (Sincronización en tiempo real)
 const usersRef = ref(db, "users");
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
+
+  // PROTECCIÓN: Si Firebase viene vacío pero es la primera carga,
+  // validamos si realmente no hay datos o si está respondiendo.
   users = data || {};
+  isFirebaseInitialized = true;
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -89,6 +95,9 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
+  // SEGURIDAD: No guarda nada si Firebase no ha terminado de sincronizar al cargar la app
+  if (!isFirebaseInitialized) return;
+
   const usersRef = ref(db, "users");
   set(usersRef, users)
     .then(() => console.log("¡Datos guardados con éxito en Firebase!"))
@@ -168,47 +177,62 @@ window.adminEditStudent = function (key) {
 
   updateAdminNavButtons("manage");
 
-  let html = `
-        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Managing: ${sanitizeInput(student.name)}</h3>
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-            <span style="font-size: 1.5rem; font-weight: bold;">
-                Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
-            </span>
-            <button onclick="window.viewStudentBoard('${key}')" style="background: #4CAF50; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;">
-                👁️ View Student Board
-            </button>
-        </div>
-        <div id="manage-list">
-    `;
+  container.innerHTML = ""; // Limpiamos contenedor
+
+  // Creamos la estructura base usando nodos del DOM para evitar fallas de click
+  const title = document.createElement("h3");
+  title.style =
+    "text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;";
+  title.innerHTML = `Managing: ${sanitizeInput(student.name)}`;
+  container.appendChild(title);
+
+  const statsDiv = document.createElement("div");
+  statsDiv.style =
+    "display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;";
+  statsDiv.innerHTML = `
+    <span style="font-size: 1.5rem; font-weight: bold;">
+        Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
+    </span>
+  `;
+
+  const viewBoardBtn = document.createElement("button");
+  viewBoardBtn.style =
+    "background: #4CAF50; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;";
+  viewBoardBtn.textContent = "👁️ View Student Board";
+  viewBoardBtn.addEventListener("click", () => window.viewStudentBoard(key));
+
+  statsDiv.appendChild(viewBoardBtn);
+  container.appendChild(statsDiv);
+
+  const manageList = document.createElement("div");
+  manageList.id = "manage-list";
 
   for (let i = 1; i <= 30; i++) {
     const unlocked = !!(student.progress && student.progress[i]);
-    html += `
-            <div id="manage-row-${i}" style="display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 18px 20px; margin-bottom: 10px; border-radius: 14px; border: 1px solid #444; flex-wrap: wrap; gap: 10px;">
-                <span style="font-size: 1.4rem; font-weight: 600;">
-                    Stage ${i}
-                    ${[5, 10, 15, 20, 25].includes(i) ? " <span style='color:#ffd700'>⭐ Special</span>" : ""}
-                    ${i === 30 ? " <span style='color:#ffd700'>🏆 Final</span>" : ""}
-                </span>
-                <button onclick="window.toggleCasilla('${key}', ${i})" 
-                        style="background: ${unlocked ? "#d32f2f" : "#FF6200"}; 
-                               color: white; 
-                               padding: 12px 24px; 
-                               border: none; 
-                               border-radius: 12px; 
-                               font-weight: bold;
-                               font-size: 1.05rem;
-                               margin: 0;
-                               width: auto;
-                               min-width: 130px;">
-                    ${unlocked ? "🔒 Lock" : "🔓 Unlock"}
-                </button>
-            </div>
-        `;
+    const row = document.createElement("div");
+    row.id = `manage-row-${i}`;
+    row.style =
+      "display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 18px 20px; margin-bottom: 10px; border-radius: 14px; border: 1px solid #444; flex-wrap: wrap; gap: 10px;";
+
+    row.innerHTML = `
+      <span style="font-size: 1.4rem; font-weight: 600;">
+          Stage ${i}
+          ${[5, 10, 15, 20, 25].includes(i) ? " <span style='color:#ffd700'>⭐ Special</span>" : ""}
+          ${i === 30 ? " <span style='color:#ffd700'>🏆 Final</span>" : ""}
+      </span>
+    `;
+
+    const lockBtn = document.createElement("button");
+    lockBtn.style = `background: ${unlocked ? "#d32f2f" : "#FF6200"}; color: white; padding: 12px 24px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.05rem; margin: 0; width: auto; min-width: 130px;`;
+    lockBtn.textContent = unlocked ? "🔒 Lock" : "🔓 Unlock";
+
+    lockBtn.addEventListener("click", () => window.toggleCasilla(key, i));
+
+    row.appendChild(lockBtn);
+    manageList.appendChild(row);
   }
 
-  html += `</div>`;
-  container.innerHTML = html;
+  container.appendChild(manageList);
 };
 
 window.toggleCasilla = function (key, num) {
@@ -221,6 +245,7 @@ window.toggleCasilla = function (key, num) {
   }
 
   window.saveUsers();
+  window.adminEditStudent(key); // Refresca la vista de gestión al instante
 };
 
 window.executeReset = function () {
@@ -343,17 +368,26 @@ window.renderStudentsList = function (filter = "") {
     if (student.name.toLowerCase().includes(filter.toLowerCase())) {
       const unlockedCount = Object.keys(student.progress || {}).length;
 
+      // Creamos la fila de forma nativa
       const div = document.createElement("div");
       div.className = "student-row";
+
       div.innerHTML = `
-                <div class="student-info">
-                    <strong style="font-size: 1.8rem; display: block;">${sanitizeInput(student.name)}</strong>
-                    <span style="color: #aaa; margin-top: 6px; font-size: 1.1rem; display: block;">
-                        Unlocked: <strong>${unlockedCount}/30</strong>
-                    </span>
-                </div>
-                <button onclick="window.adminEditStudent('${key}')" style="margin: 0;">Manage Student</button>
-            `;
+        <div class="student-info">
+            <strong style="font-size: 1.8rem; display: block;">${sanitizeInput(student.name)}</strong>
+            <span style="color: #aaa; margin-top: 6px; font-size: 1.1rem; display: block;">
+                Unlocked: <strong>${unlockedCount}/30</strong>
+            </span>
+        </div>
+      `;
+
+      // Botón nativo: esto garantiza que el click funcione sin importar las restricciones del módulo
+      const manageBtn = document.createElement("button");
+      manageBtn.style = "margin: 0;";
+      manageBtn.textContent = "Manage Student";
+      manageBtn.addEventListener("click", () => window.adminEditStudent(key));
+
+      div.appendChild(manageBtn);
       container.appendChild(div);
     }
   });
