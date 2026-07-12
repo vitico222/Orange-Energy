@@ -37,7 +37,6 @@ for (let i = 1; i <= 30; i++) {
 }
 
 // ====================== INTEGRACIÓN DE FIREBASE ======================
-// Importamos los módulos necesarios de Firebase a través de CDN (Forma correcta para navegador)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getDatabase,
@@ -46,7 +45,6 @@ import {
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Tu objeto de configuración web de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCbie2kCYWIlox7Cvs_MYf9HU4JPrCXgFI",
   authDomain: "orange-energy-42100.firebaseapp.com",
@@ -57,20 +55,18 @@ const firebaseConfig = {
   appId: "1:151551658032:web:0a3a7a6346614f0f69c5f5",
 };
 
-// Inicializamos Firebase de forma única
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = {}; // Ahora se llenará en tiempo real desde Firebase
+let users = {};
 
-// Escucha activa de la base de datos (Sincronización en tiempo real)
 const usersRef = ref(db, "users");
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
-  users = data || {}; // Si el administrador está viendo la lista de estudiantes, la actualiza en tiempo real
+  users = data || {};
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -78,8 +74,8 @@ onValue(usersRef, (snapshot) => {
     adminScreen.classList.contains("active") &&
     !currentEditingStudentKey
   ) {
-    renderStudentsList(document.getElementById("search-students").value);
-  } // Si el estudiante tiene su tablero abierto, actualiza sus casillas si el admin las cambia
+    window.renderStudentsList(document.getElementById("search-students").value);
+  }
 
   if (currentUser && users[currentUser.key]) {
     currentUser.progress = users[currentUser.key].progress || {};
@@ -92,8 +88,6 @@ onValue(usersRef, (snapshot) => {
   }
 });
 
-// Reemplazamos el antiguo LocalStorage por Firebase
-// Asegúrate de que tenga el "window." adelante para que sea visible en todos lados
 window.saveUsers = function () {
   const usersRef = ref(db, "users");
   set(usersRef, users)
@@ -167,7 +161,6 @@ function showCasillaModal(num) {
 }
 
 // ====================== ADMIN PANEL FUNCTIONS ======================
-// Cambia la declaración de adminEditStudent para que sea global
 window.adminEditStudent = function (key) {
   currentEditingStudentKey = key;
   const student = users[key];
@@ -176,42 +169,42 @@ window.adminEditStudent = function (key) {
   updateAdminNavButtons("manage");
 
   let html = `
-        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Managing: ${sanitizeInput(student.name)}</h3>
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-            <span style="font-size: 1.5rem; font-weight: bold;">
-                Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
-            </span>
-            <button onclick="viewStudentBoard('${key}')" style="background: #4CAF50; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;">
-                👁️ View Student Board
-            </button>
-        </div>
-        <div id="manage-list">
-    `;
+        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Managing: ${sanitizeInput(student.name)}</h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <span style="font-size: 1.5rem; font-weight: bold;">
+                Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
+            </span>
+            <button onclick="window.viewStudentBoard('${key}')" style="background: #4CAF50; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;">
+                👁️ View Student Board
+            </button>
+        </div>
+        <div id="manage-list">
+    `;
 
   for (let i = 1; i <= 30; i++) {
     const unlocked = !!(student.progress && student.progress[i]);
     html += `
-            <div id="manage-row-${i}" style="display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 18px 20px; margin-bottom: 10px; border-radius: 14px; border: 1px solid #444; flex-wrap: wrap; gap: 10px;">
-                <span style="font-size: 1.4rem; font-weight: 600;">
-                    Stage ${i}
-                    ${[5, 10, 15, 20, 25].includes(i) ? " <span style='color:#ffd700'>⭐ Special</span>" : ""}
-                    ${i === 30 ? " <span style='color:#ffd700'>🏆 Final</span>" : ""}
-                </span>
-                <button onclick="toggleCasilla('${key}', ${i})" 
-                        style="background: ${unlocked ? "#d32f2f" : "#FF6200"}; 
-                               color: white; 
-                               padding: 12px 24px; 
-                               border: none; 
-                               border-radius: 12px; 
-                               font-weight: bold;
-                               font-size: 1.05rem;
-                               margin: 0;
-                               width: auto;
-                               min-width: 130px;">
-                    ${unlocked ? "🔒 Lock" : "🔓 Unlock"}
-                </button>
-            </div>
-        `;
+            <div id="manage-row-${i}" style="display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 18px 20px; margin-bottom: 10px; border-radius: 14px; border: 1px solid #444; flex-wrap: wrap; gap: 10px;">
+                <span style="font-size: 1.4rem; font-weight: 600;">
+                    Stage ${i}
+                    ${[5, 10, 15, 20, 25].includes(i) ? " <span style='color:#ffd700'>⭐ Special</span>" : ""}
+                    ${i === 30 ? " <span style='color:#ffd700'>🏆 Final</span>" : ""}
+                </span>
+                <button onclick="window.toggleCasilla('${key}', ${i})" 
+                        style="background: ${unlocked ? "#d32f2f" : "#FF6200"}; 
+                               color: white; 
+                               padding: 12px 24px; 
+                               border: none; 
+                               border-radius: 12px; 
+                               font-weight: bold;
+                               font-size: 1.05rem;
+                               margin: 0;
+                               width: auto;
+                               min-width: 130px;">
+                    ${unlocked ? "🔒 Lock" : "🔓 Unlock"}
+                </button>
+            </div>
+        `;
   }
 
   html += `</div>`;
@@ -227,10 +220,9 @@ window.toggleCasilla = function (key, num) {
     users[key].progress[num] = true;
   }
 
-  saveUsers(); // Guarda directamente en la nube
+  window.saveUsers();
 };
 
-// Cambia la declaración de executeReset para hacerla global
 window.executeReset = function () {
   if (currentEditingStudentKey && users[currentEditingStudentKey]) {
     const studentName = users[currentEditingStudentKey].name;
@@ -240,8 +232,8 @@ window.executeReset = function () {
       )
     ) {
       users[currentEditingStudentKey].progress = {};
-      saveUsers();
-      adminEditStudent(currentEditingStudentKey);
+      window.saveUsers();
+      window.adminEditStudent(currentEditingStudentKey);
     }
   }
 };
@@ -251,9 +243,9 @@ window.viewStudentBoard = function (key) {
   updateAdminNavButtons("board");
 
   let html = `
-        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${sanitizeInput(student.name)}</h3>
-        <div id="student-board-view" class="game-board" style="margin: 20px auto; max-width: 1250px;"></div>
-    `;
+        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${sanitizeInput(student.name)}</h3>
+        <div id="student-board-view" class="game-board" style="margin: 20px auto; max-width: 1250px;"></div>
+    `;
   document.getElementById("students-list").innerHTML = html;
 
   setTimeout(
@@ -270,7 +262,7 @@ document.getElementById("admin-close-btn").addEventListener("click", () => {
 
 document
   .getElementById("admin-reset-btn")
-  .addEventListener("click", executeReset);
+  .addEventListener("click", window.executeReset);
 
 // ====================== LOGIN & SIGNUP ======================
 document.getElementById("login-form").addEventListener("submit", (e) => {
@@ -302,7 +294,7 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   if (users[key]) return alert("This student already exists.");
 
   users[key] = { name, progress: {} };
-  saveUsers();
+  window.saveUsers();
   alert("Account created successfully!");
   document.getElementById("back-to-login").click();
 });
@@ -339,7 +331,7 @@ window.showAdminPanel = function () {
     .querySelectorAll(".screen")
     .forEach((s) => s.classList.remove("active"));
   document.getElementById("admin-screen").classList.add("active");
-  renderStudentsList();
+  window.renderStudentsList();
 };
 
 window.renderStudentsList = function (filter = "") {
@@ -354,14 +346,14 @@ window.renderStudentsList = function (filter = "") {
       const div = document.createElement("div");
       div.className = "student-row";
       div.innerHTML = `
-                <div class="student-info">
-                    <strong style="font-size: 1.8rem; display: block;">${sanitizeInput(student.name)}</strong>
-                    <span style="color: #aaa; margin-top: 6px; font-size: 1.1rem; display: block;">
-                        Unlocked: <strong>${unlockedCount}/30</strong>
-                    </span>
-                </div>
-                <button onclick="adminEditStudent('${key}')" style="margin: 0;">Manage Student</button>
-            `;
+                <div class="student-info">
+                    <strong style="font-size: 1.8rem; display: block;">${sanitizeInput(student.name)}</strong>
+                    <span style="color: #aaa; margin-top: 6px; font-size: 1.1rem; display: block;">
+                        Unlocked: <strong>${unlockedCount}/30</strong>
+                    </span>
+                </div>
+                <button onclick="window.adminEditStudent('${key}')" style="margin: 0;">Manage Student</button>
+            `;
       container.appendChild(div);
     }
   });
@@ -374,13 +366,13 @@ window.renderStudentsList = function (filter = "") {
 
 document
   .getElementById("search-students")
-  .addEventListener("input", (e) => renderStudentsList(e.target.value));
+  .addEventListener("input", (e) => window.renderStudentsList(e.target.value));
 
 document.getElementById("admin-btn").addEventListener("click", () => {
   const name = prompt("Admin Username:");
   const pin = prompt("Admin PIN:");
   if (name === ADMIN_USER && pin === ADMIN_PIN) {
-    window.showAdminPanel(); // <-- Cambiado aquí para asegurar el llamado global
+    window.showAdminPanel();
   } else {
     alert("Incorrect admin credentials.");
   }
