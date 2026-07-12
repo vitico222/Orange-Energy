@@ -42,7 +42,6 @@ import {
   getDatabase,
   ref,
   set,
-  get,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -62,27 +61,15 @@ const db = getDatabase(app);
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = {}; // Inicializado siempre listo como objeto
+let users = {}; // Objeto local listo siempre
 
 const usersRef = ref(db, "users");
 
-// Carga inicial inmediata de datos existentes
-get(usersRef)
-  .then((snapshot) => {
-    if (snapshot.exists()) {
-      users = snapshot.val() || {};
-    }
-  })
-  .catch((error) => {
-    console.error("Error al sincronizar Firebase al inicio:", error);
-  });
-
-// Escucha activa de cambios en tiempo real
+// Escucha activa de cambios en tiempo real corregida:
+// Si viene null (base de datos limpia), forzamos a que sea un objeto {}
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
-  if (data) {
-    users = data;
-  }
+  users = data || {};
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -105,10 +92,12 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
-  const usersRef = ref(db, "users");
+  // Guardado directo y reactivo en caliente
   set(usersRef, users)
-    .then(() => console.log("¡Datos guardados con éxito en Firebase!"))
-    .catch((error) => console.error("Error al guardar en Firebase:", error));
+    .then(() => console.log("¡Datos sincronizados con Firebase con éxito!"))
+    .catch((error) =>
+      console.error("Error crítico al guardar en Firebase:", error),
+    );
 };
 
 // ====================== HELPER FUNCTIONS ======================
