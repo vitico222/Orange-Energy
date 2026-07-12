@@ -95,9 +95,13 @@ onValue(usersRef, (snapshot) => {
 });
 
 // Reemplazamos el antiguo LocalStorage por Firebase
-function saveUsers() {
-  set(ref(db, "users"), users);
-}
+// Asegúrate de que tenga el "window." adelante para que sea visible en todos lados
+window.saveUsers = function () {
+  const usersRef = ref(db, "users");
+  set(usersRef, users)
+    .then(() => console.log("¡Datos guardados con éxito en Firebase!"))
+    .catch((error) => console.error("Error al guardar en Firebase:", error));
+};
 
 // ====================== HELPER FUNCTIONS ======================
 function sanitizeInput(text) {
