@@ -37,7 +37,7 @@ for (let i = 1; i <= 30; i++) {
 }
 
 // ====================== INTEGRACIÓN DE FIREBASE ======================
-// Importamos los módulos necesarios de Firebase a través de CDN
+// Importamos los módulos necesarios de Firebase a través de CDN (Forma correcta para navegador)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getDatabase,
@@ -46,13 +46,7 @@ import {
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// !!! REEMPLAZA ESTE OBJETO CON LAS CREDENCIALES EXACTAS DE TU PROYECTO DE FIREBASE !!! Reemplazado..
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// Tu objeto de configuración web de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCbie2kCYWIlox7Cvs_MYf9HU4JPrCXgFI",
   authDomain: "orange-energy-42100.firebaseapp.com",
@@ -63,7 +57,7 @@ const firebaseConfig = {
   appId: "1:151551658032:web:0a3a7a6346614f0f69c5f5",
 };
 
-// Inicializamos Firebase
+// Inicializamos Firebase de forma única
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
