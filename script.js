@@ -61,15 +61,17 @@ const db = getDatabase(app);
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = null; // Iniciamos en null para saber si NUNCA ha cargado de la red
+let users = {};
+let isFirebaseLoaded = false; // Nueva bandera: controla si el servidor ya dio respuesta (con o sin datos)
 
 // Escucha activa de la base de datos (Sincronización en tiempo real)
 const usersRef = ref(db, "users");
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
 
-  // Si la base de datos está genuinamente vacía en la nube, ponemos {}, si no, lo que traiga
+  // Si no hay datos en la nube, inicializa como objeto vacío para que no falle el login/registro
   users = data || {};
+  isFirebaseLoaded = true; // El servidor ya respondió con éxito
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -92,10 +94,9 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
-  // PROTECCIÓN CRÍTICA: Si 'users' es null, significa que el dispositivo
-  // aún no se ha conectado con Firebase. PROHIBIDO escribir para no borrar la nube.
-  if (users === null) {
-    console.warn("Intento de guardado bloqueado: Firebase aún no sincroniza.");
+  // PROTECCIÓN: Si la app no ha conectado ni una sola vez con Firebase, prohíbe guardar
+  if (!isFirebaseLoaded) {
+    console.warn("Intento de guardado bloqueado: Firebase aún no responde.");
     return;
   }
 
@@ -291,7 +292,7 @@ document
 // ====================== LOGIN & SIGNUP ======================
 document.getElementById("login-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  if (users === null)
+  if (!isFirebaseLoaded)
     return alert("Connecting to server... Please wait a second.");
 
   let name = document.getElementById("login-name").value.trim();
@@ -312,7 +313,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  if (users === null)
+  if (!isFirebaseLoaded)
     return alert("Connecting to server... Please wait a second.");
 
   let name = sanitizeInput(document.getElementById("signup-name").value.trim());
@@ -355,7 +356,7 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 
 // ====================== ADMIN MAIN VIEW ======================
 window.showAdminPanel = function () {
-  if (users === null) {
+  if (!isFirebaseLoaded) {
     alert("Data is downloading from Firebase. Please wait a moment.");
     return;
   }
@@ -372,7 +373,7 @@ window.renderStudentsList = function (filter = "") {
   const container = document.getElementById("students-list");
   container.innerHTML = "<h3>Registered Students</h3>";
 
-  if (users === null) return;
+  if (!isFirebaseLoaded) return;
 
   Object.keys(users).forEach((key) => {
     const student = users[key];
