@@ -42,6 +42,7 @@ import {
   getDatabase,
   ref,
   set,
+  get,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -62,16 +63,29 @@ const db = getDatabase(app);
 let currentUser = null;
 let currentEditingStudentKey = null;
 let users = {};
-let isFirebaseLoaded = false; // Nueva bandera: controla si el servidor ya dio respuesta (con o sin datos)
+let isFirebaseLoaded = false; // Control de carga definitivo
 
-// Escucha activa de la base de datos (Sincronización en tiempo real)
+// 1. CARGA INICIAL FORZADA: Trae los datos de inmediato al cargar la app
 const usersRef = ref(db, "users");
-onValue(usersRef, (snapshot) => {
-  const data = snapshot.val();
+get(usersRef)
+  .then((snapshot) => {
+    users = snapshot.val() || {};
+    isFirebaseLoaded = true;
+    console.log("¡Firebase inicializado correctamente!");
+  })
+  .catch((error) => {
+    console.error("Error en la carga inicial de Firebase:", error);
+    // Fail-safe: Desbloqueamos la app con un objeto vacío para que no se congele la UI si falla la red
+    users = {};
+    isFirebaseLoaded = true;
+  });
 
-  // Si no hay datos en la nube, inicializa como objeto vacío para que no falle el login/registro
+// 2. ESCUCHA EN TIEMPO REAL: Sincroniza cambios posteriores de forma pasiva
+onValue(usersRef, (snapshot) => {
+  if (!isFirebaseLoaded) return; // Evitamos pisar datos durante la carga inicial
+
+  const data = snapshot.val();
   users = data || {};
-  isFirebaseLoaded = true; // El servidor ya respondió con éxito
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -94,11 +108,7 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
-  // PROTECCIÓN: Si la app no ha conectado ni una sola vez con Firebase, prohíbe guardar
-  if (!isFirebaseLoaded) {
-    console.warn("Intento de guardado bloqueado: Firebase aún no responde.");
-    return;
-  }
+  if (!isFirebaseLoaded) return;
 
   const usersRef = ref(db, "users");
   set(usersRef, users)
