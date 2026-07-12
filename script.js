@@ -85,7 +85,15 @@ const usersRef = ref(db, "users");
 // Escucha activa de cambios en tiempo real adaptada al flujo de vistas
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
-  users = data || {};
+  // PROTECCIÓN: Solo actualizamos si recibimos datos reales
+  if (data) {
+    users = data;
+    console.log("Datos cargados correctamente");
+  } else {
+    console.warn(
+      "Firebase devolvió datos vacíos, no sobrescribiremos la variable local.",
+    );
+  }
 
   const adminScreen = document.getElementById("admin-screen");
   if (adminScreen && adminScreen.classList.contains("active")) {
