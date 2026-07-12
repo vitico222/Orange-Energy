@@ -36,30 +36,87 @@ for (let i = 1; i <= 30; i++) {
   }
 }
 
+// ====================== INTEGRACIÓN DE FIREBASE ======================
+// Importamos los módulos necesarios de Firebase a través de CDN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  onValue,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// !!! REEMPLAZA ESTE OBJETO CON LAS CREDENCIALES EXACTAS DE TU PROYECTO DE FIREBASE !!! Reemplazado..
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCbie2kCYWIlox7Cvs_MYf9HU4JPrCXgFI",
+  authDomain: "orange-energy-42100.firebaseapp.com",
+  databaseURL: "https://orange-energy-42100-default-rtdb.firebaseio.com",
+  projectId: "orange-energy-42100",
+  storageBucket: "orange-energy-42100.firebasestorage.app",
+  messagingSenderId: "151551658032",
+  appId: "1:151551658032:web:0a3a7a6346614f0f69c5f5",
+};
+
+// Inicializamos Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = JSON.parse(localStorage.getItem("ifl_users")) || {};
+let users = {}; // Ahora se llenará en tiempo real desde Firebase
 
-// ====================== HELPER FUNCTIONS ======================
+// Escucha activa de la base de datos (Sincronización en tiempo real)
+const usersRef = ref(db, "users");
+onValue(usersRef, (snapshot) => {
+  const data = snapshot.val();
+  users = data || {};
+
+  // Si el administrador está viendo la lista de estudiantes, la actualiza en tiempo real
+  const adminScreen = document.getElementById("admin-screen");
+  if (
+    adminScreen &&
+    adminScreen.classList.contains("active") &&
+    !currentEditingStudentKey
+  ) {
+    renderStudentsList(document.getElementById("search-students").value);
+  }
+
+  // Si el estudiante tiene su tablero abierto, actualiza sus casillas si el admin las cambia
+  if (currentUser && users[currentUser.key]) {
+    currentUser.progress = users[currentUser.key].progress || {};
+    const boardView = document.getElementById("student-board-view");
+    if (boardView) {
+      renderBoard(currentUser.progress, "student-board-view");
+    } else {
+      renderBoard(currentUser.progress, "game-board");
+    }
+  }
+});
+
+// Reemplazamos el antiguo LocalStorage por Firebase
 function saveUsers() {
-  localStorage.setItem("ifl_users", JSON.stringify(users));
+  set(ref(db, "users"), users);
 }
 
-// Convierte caracteres especiales en texto seguro para prevenir inyecciones de código (XSS)
+// ====================== HELPER FUNCTIONS ======================
 function sanitizeInput(text) {
   const element = document.createElement("div");
   element.innerText = text;
   return element.innerHTML;
 }
 
-// Control de visibilidad de los botones en la barra superior
 function updateAdminNavButtons(view) {
   const btnBackLogin = document.getElementById("admin-back-btn");
   const btnClose = document.getElementById("admin-close-btn");
   const btnReset = document.getElementById("admin-reset-btn");
 
-  // Ocultamos todos por defecto
   btnBackLogin.style.display = "none";
   btnClose.style.display = "none";
   btnReset.style.display = "none";
@@ -119,12 +176,10 @@ function adminEditStudent(key) {
   const student = users[key];
   const container = document.getElementById("students-list");
 
-  // Actualizamos los botones de arriba (Back to login, Close, Reset)
   updateAdminNavButtons("manage");
 
   let html = `
         <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Managing: ${sanitizeInput(student.name)}</h3>
-        
         <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <span style="font-size: 1.5rem; font-weight: bold;">
                 Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
@@ -133,7 +188,6 @@ function adminEditStudent(key) {
                 👁️ View Student Board
             </button>
         </div>
-        
         <div id="manage-list">
     `;
 
@@ -176,17 +230,7 @@ window.toggleCasilla = function (key, num) {
     users[key].progress[num] = true;
   }
 
-  saveUsers();
-
-  const row = document.getElementById(`manage-row-${num}`);
-  if (row) {
-    const button = row.querySelector("button");
-    if (button) {
-      const isUnlocked = !!users[key].progress[num];
-      button.textContent = isUnlocked ? "🔒 Lock" : "🔓 Unlock";
-      button.style.background = isUnlocked ? "#d32f2f" : "#FF6200";
-    }
-  }
+  saveUsers(); // Guarda directamente en la nube
 };
 
 function executeReset() {
@@ -206,8 +250,6 @@ function executeReset() {
 
 window.viewStudentBoard = function (key) {
   const student = users[key];
-
-  // Cambiamos botones superiores: Muestra Back to Login y Close
   updateAdminNavButtons("board");
 
   let html = `
@@ -222,7 +264,6 @@ window.viewStudentBoard = function (key) {
   );
 };
 
-// Vinculación de eventos a los botones nativos del HTML
 document.getElementById("admin-close-btn").addEventListener("click", () => {
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
@@ -241,7 +282,11 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   const key = (name + pin).toLowerCase().replace(/\s/g, "");
 
   if (users[key]) {
-    currentUser = { name, key, progress: users[key].progress || {} };
+    currentUser = {
+      name: users[key].name,
+      key,
+      progress: users[key].progress || {},
+    };
     showBoard();
   } else {
     alert("Student not found. Please Sign Up first.");
@@ -250,7 +295,6 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  // Al registrar, sanitizamos el nombre para asegurarnos de que persista limpio en el LocalStorage
   let name = sanitizeInput(document.getElementById("signup-name").value.trim());
   let pin = document.getElementById("signup-pin").value.trim();
 
