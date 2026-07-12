@@ -230,6 +230,20 @@ button:hover {
 }
 
 /* Responsive */
+
+/* Vista de 3 columnas para móviles (Pendiente 3) */
+@media (max-width: 480px) {
+  .game-board {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+  .casilla {
+    min-width: 0 !important;
+    font-size: 1.4rem !important;
+  }
+}
+
 @media (max-width: 768px) {
   .game-board {
     grid-template-columns: repeat(5, 1fr);
