@@ -37,12 +37,13 @@ for (let i = 1; i <= 30; i++) {
 }
 
 // ====================== INTEGRACIÓN DE FIREBASE ======================
+// ====================== INTEGRACIÓN DE FIREBASE ======================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
+  getDatabase,
   ref,
   set,
   onValue,
-  initializeDatabase, // Forzamos el uso de esta función para saltar WebSockets
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -57,10 +58,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// SOLUCIÓN AL ERROR WSS: Obliga al SDK a usar Long-Polling HTTPS convencional
-const db = initializeDatabase(app, {
-  preferNowebsockets: true,
-});
+// Corrección: Usamos getDatabase estándar, pero configuramos el transporte forzado
+const db = getDatabase(app);
+
+// FORZAR el uso de Long-Polling si el WebSocket falla
+// Esto es un parche interno del SDK para redes restrictivas
+if (db._repo) {
+  db._repo.persistentConnection_.forceLongPolling_ = true;
+}
 
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
