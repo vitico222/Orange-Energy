@@ -61,18 +61,15 @@ const db = getDatabase(app);
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = {};
-let isFirebaseInitialized = false; // Bandera para proteger tus datos de borrados accidentales
+let users = null; // Iniciamos en null para saber si NUNCA ha cargado de la red
 
 // Escucha activa de la base de datos (Sincronización en tiempo real)
 const usersRef = ref(db, "users");
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
 
-  // PROTECCIÓN: Si Firebase viene vacío pero es la primera carga,
-  // validamos si realmente no hay datos o si está respondiendo.
+  // Si la base de datos está genuinamente vacía en la nube, ponemos {}, si no, lo que traiga
   users = data || {};
-  isFirebaseInitialized = true;
 
   const adminScreen = document.getElementById("admin-screen");
   if (
@@ -95,8 +92,12 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
-  // SEGURIDAD: No guarda nada si Firebase no ha terminado de sincronizar al cargar la app
-  if (!isFirebaseInitialized) return;
+  // PROTECCIÓN CRÍTICA: Si 'users' es null, significa que el dispositivo
+  // aún no se ha conectado con Firebase. PROHIBIDO escribir para no borrar la nube.
+  if (users === null) {
+    console.warn("Intento de guardado bloqueado: Firebase aún no sincroniza.");
+    return;
+  }
 
   const usersRef = ref(db, "users");
   set(usersRef, users)
@@ -176,10 +177,8 @@ window.adminEditStudent = function (key) {
   const container = document.getElementById("students-list");
 
   updateAdminNavButtons("manage");
+  container.innerHTML = "";
 
-  container.innerHTML = ""; // Limpiamos contenedor
-
-  // Creamos la estructura base usando nodos del DOM para evitar fallas de click
   const title = document.createElement("h3");
   title.style =
     "text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;";
@@ -245,7 +244,7 @@ window.toggleCasilla = function (key, num) {
   }
 
   window.saveUsers();
-  window.adminEditStudent(key); // Refresca la vista de gestión al instante
+  window.adminEditStudent(key);
 };
 
 window.executeReset = function () {
@@ -292,6 +291,9 @@ document
 // ====================== LOGIN & SIGNUP ======================
 document.getElementById("login-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  if (users === null)
+    return alert("Connecting to server... Please wait a second.");
+
   let name = document.getElementById("login-name").value.trim();
   let pin = document.getElementById("login-pin").value.trim();
   const key = (name + pin).toLowerCase().replace(/\s/g, "");
@@ -310,6 +312,9 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  if (users === null)
+    return alert("Connecting to server... Please wait a second.");
+
   let name = sanitizeInput(document.getElementById("signup-name").value.trim());
   let pin = document.getElementById("signup-pin").value.trim();
 
@@ -350,6 +355,10 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 
 // ====================== ADMIN MAIN VIEW ======================
 window.showAdminPanel = function () {
+  if (users === null) {
+    alert("Data is downloading from Firebase. Please wait a moment.");
+    return;
+  }
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
   document
@@ -363,12 +372,13 @@ window.renderStudentsList = function (filter = "") {
   const container = document.getElementById("students-list");
   container.innerHTML = "<h3>Registered Students</h3>";
 
+  if (users === null) return;
+
   Object.keys(users).forEach((key) => {
     const student = users[key];
     if (student.name.toLowerCase().includes(filter.toLowerCase())) {
       const unlockedCount = Object.keys(student.progress || {}).length;
 
-      // Creamos la fila de forma nativa
       const div = document.createElement("div");
       div.className = "student-row";
 
@@ -381,7 +391,6 @@ window.renderStudentsList = function (filter = "") {
         </div>
       `;
 
-      // Botón nativo: esto garantiza que el click funcione sin importar las restricciones del módulo
       const manageBtn = document.createElement("button");
       manageBtn.style = "margin: 0;";
       manageBtn.textContent = "Manage Student";
