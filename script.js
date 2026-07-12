@@ -39,10 +39,10 @@ for (let i = 1; i <= 30; i++) {
 // ====================== INTEGRACIÓN DE FIREBASE ======================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
-  getDatabase,
   ref,
   set,
   onValue,
+  initializeDatabase, // Forzamos el uso de esta función para saltar WebSockets
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -56,28 +56,35 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+
+// SOLUCIÓN AL ERROR WSS: Obliga al SDK a usar Long-Polling HTTPS convencional
+const db = initializeDatabase(app, {
+  preferNowebsockets: true,
+});
 
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
-let users = {}; // Objeto local listo siempre
+let currentAdminView = "list"; // Mantiene constancia de en qué vista del panel estamos
+let users = {};
 
 const usersRef = ref(db, "users");
 
-// Escucha activa de cambios en tiempo real corregida:
-// Si viene null (base de datos limpia), forzamos a que sea un objeto {}
+// Escucha activa de cambios en tiempo real adaptada al flujo de vistas
 onValue(usersRef, (snapshot) => {
   const data = snapshot.val();
   users = data || {};
 
   const adminScreen = document.getElementById("admin-screen");
-  if (
-    adminScreen &&
-    adminScreen.classList.contains("active") &&
-    !currentEditingStudentKey
-  ) {
-    window.renderStudentsList(document.getElementById("search-students").value);
+  if (adminScreen && adminScreen.classList.contains("active")) {
+    if (currentAdminView === "list") {
+      const searchInput = document.getElementById("search-students");
+      window.renderStudentsList(searchInput ? searchInput.value : "");
+    } else if (currentAdminView === "manage" && currentEditingStudentKey) {
+      window.adminEditStudent(currentEditingStudentKey);
+    } else if (currentAdminView === "board" && currentEditingStudentKey) {
+      window.viewStudentBoard(currentEditingStudentKey);
+    }
   }
 
   if (currentUser && users[currentUser.key]) {
@@ -92,7 +99,6 @@ onValue(usersRef, (snapshot) => {
 });
 
 window.saveUsers = function () {
-  // Guardado directo y reactivo en caliente
   set(usersRef, users)
     .then(() => console.log("¡Datos sincronizados con Firebase con éxito!"))
     .catch((error) =>
@@ -108,9 +114,12 @@ function sanitizeInput(text) {
 }
 
 function updateAdminNavButtons(view) {
+  currentAdminView = view;
   const btnBackLogin = document.getElementById("admin-back-btn");
   const btnClose = document.getElementById("admin-close-btn");
   const btnReset = document.getElementById("admin-reset-btn");
+
+  if (!btnBackLogin || !btnClose || !btnReset) return;
 
   btnBackLogin.style.display = "none";
   btnClose.style.display = "none";
@@ -158,6 +167,7 @@ function renderBoard(progress = {}, containerId = "game-board") {
 // ====================== MODAL ======================
 function showCasillaModal(num) {
   const modal = document.getElementById("casilla-modal");
+  if (!modal) return;
   document.getElementById("modal-title").textContent =
     casillaDescriptions[num].title;
   document.getElementById("modal-description").textContent =
@@ -170,6 +180,7 @@ window.adminEditStudent = function (key) {
   currentEditingStudentKey = key;
   const student = users[key];
   const container = document.getElementById("students-list");
+  if (!student || !container) return;
 
   updateAdminNavButtons("manage");
   container.innerHTML = "";
@@ -185,7 +196,7 @@ window.adminEditStudent = function (key) {
     "display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;";
   statsDiv.innerHTML = `
     <span style="font-size: 1.5rem; font-weight: bold;">
-        Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
+      Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
     </span>
   `;
 
@@ -230,6 +241,7 @@ window.adminEditStudent = function (key) {
 };
 
 window.toggleCasilla = function (key, num) {
+  if (!users[key]) return;
   if (!users[key].progress) users[key].progress = {};
 
   if (users[key].progress[num]) {
@@ -259,12 +271,13 @@ window.executeReset = function () {
 
 window.viewStudentBoard = function (key) {
   const student = users[key];
+  if (!student) return;
   updateAdminNavButtons("board");
 
   let html = `
-        <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${sanitizeInput(student.name)}</h3>
-        <div id="student-board-view" class="game-board" style="margin: 20px auto; max-width: 1250px;"></div>
-    `;
+    <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${sanitizeInput(student.name)}</h3>
+    <div id="student-board-view" class="game-board" style="margin: 20px auto; max-width: 1250px;"></div>
+  `;
   document.getElementById("students-list").innerHTML = html;
 
   setTimeout(
@@ -276,7 +289,8 @@ window.viewStudentBoard = function (key) {
 document.getElementById("admin-close-btn").addEventListener("click", () => {
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
-  window.renderStudentsList(document.getElementById("search-students").value);
+  const searchInput = document.getElementById("search-students");
+  window.renderStudentsList(searchInput ? searchInput.value : "");
 });
 
 document
@@ -306,7 +320,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
 
-  let name = sanitizeInput(document.getElementById("signup-name").value.trim());
+  let name = document.getElementById("signup-name").value.trim();
   let pin = document.getElementById("signup-pin").value.trim();
 
   if (pin.length !== 4) return alert("PIN must be 4 digits (DDMM)");
@@ -314,7 +328,7 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   const key = (name + pin).toLowerCase().replace(/\s/g, "");
   if (users[key]) return alert("This student already exists.");
 
-  users[key] = { name, progress: {} };
+  users[key] = { name: name, progress: {} };
   window.saveUsers();
   alert("Account created successfully!");
   document.getElementById("back-to-login").click();
@@ -357,6 +371,7 @@ window.showAdminPanel = function () {
 
 window.renderStudentsList = function (filter = "") {
   const container = document.getElementById("students-list");
+  if (!container) return;
   container.innerHTML = "<h3>Registered Students</h3>";
 
   Object.keys(users).forEach((key) => {
