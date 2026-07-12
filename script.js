@@ -67,6 +67,13 @@ if (db._repo) {
   db._repo.persistentConnection_.forceLongPolling_ = true;
 }
 
+setTimeout(() => {
+  if (db && db._repo) {
+    db._repo.persistentConnection_.forceLongPolling_ = true;
+    console.log("Firebase forzado a modo HTTP Long-Polling.");
+  }
+}, 1000);
+
 // ====================== GLOBAL VARIABLES ======================
 let currentUser = null;
 let currentEditingStudentKey = null;
