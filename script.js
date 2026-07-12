@@ -393,6 +393,10 @@ window.renderStudentsList = function (filter = "") {
 
       const div = document.createElement("div");
       div.className = "student-row";
+      // Aseguramos que el contenedor de los botones tenga espacio
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.justifyContent = "space-between";
 
       div.innerHTML = `
         <div class="student-info">
@@ -401,14 +405,24 @@ window.renderStudentsList = function (filter = "") {
                 Unlocked: <strong>${unlockedCount}/30</strong>
             </span>
         </div>
+        <div class="actions" style="display: flex; gap: 10px;"></div>
       `;
 
+      const actionsDiv = div.querySelector(".actions");
+
+      // 1. Botón "View Board"
+      const viewBtn = document.createElement("button");
+      viewBtn.textContent = "👁️ View Board";
+      viewBtn.style.background = "#4CAF50"; // Verde
+      viewBtn.addEventListener("click", () => window.viewStudentBoard(key));
+
+      // 2. Botón "Manage Student"
       const manageBtn = document.createElement("button");
-      manageBtn.style = "margin: 0;";
       manageBtn.textContent = "Manage Student";
       manageBtn.addEventListener("click", () => window.adminEditStudent(key));
 
-      div.appendChild(manageBtn);
+      actionsDiv.appendChild(viewBtn);
+      actionsDiv.appendChild(manageBtn);
       container.appendChild(div);
     }
   });
