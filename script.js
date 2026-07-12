@@ -449,6 +449,20 @@ document.getElementById("admin-login-submit").addEventListener("click", () => {
   }
 });
 
+// --- Lógica para permitir presionar ENTER ---
+const adminUserInput = document.getElementById("admin-user-input");
+const adminPinInput = document.getElementById("admin-pin-input");
+const loginSubmitBtn = document.getElementById("admin-login-submit");
+
+function handleEnterKey(event) {
+  if (event.key === "Enter") {
+    loginSubmitBtn.click();
+  }
+}
+
+adminUserInput.addEventListener("keypress", handleEnterKey);
+adminPinInput.addEventListener("keypress", handleEnterKey);
+
 // ====================== NAVIGATION ======================
 document.getElementById("signup-btn").addEventListener("click", () => {
   document.getElementById("login-screen").classList.remove("active");
