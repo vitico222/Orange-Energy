@@ -334,7 +334,7 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 });
 
 // ====================== ADMIN MAIN VIEW ======================
-function showAdminPanel() {
+window.showAdminPanel = function () {
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
   document
@@ -342,9 +342,9 @@ function showAdminPanel() {
     .forEach((s) => s.classList.remove("active"));
   document.getElementById("admin-screen").classList.add("active");
   renderStudentsList();
-}
+};
 
-function renderStudentsList(filter = "") {
+window.renderStudentsList = function (filter = "") {
   const container = document.getElementById("students-list");
   container.innerHTML = "<h3>Registered Students</h3>";
 
@@ -372,7 +372,7 @@ function renderStudentsList(filter = "") {
     container.innerHTML +=
       '<p style="text-align:center; color:#888; padding: 2rem;">No students registered yet.</p>';
   }
-}
+};
 
 document
   .getElementById("search-students")
