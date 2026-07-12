@@ -169,7 +169,8 @@ function showCasillaModal(num) {
 }
 
 // ====================== ADMIN PANEL FUNCTIONS ======================
-function adminEditStudent(key) {
+// Cambia la declaración de adminEditStudent para que sea global
+window.adminEditStudent = function (key) {
   currentEditingStudentKey = key;
   const student = users[key];
   const container = document.getElementById("students-list");
@@ -217,7 +218,7 @@ function adminEditStudent(key) {
 
   html += `</div>`;
   container.innerHTML = html;
-}
+};
 
 window.toggleCasilla = function (key, num) {
   if (!users[key].progress) users[key].progress = {};
@@ -231,7 +232,8 @@ window.toggleCasilla = function (key, num) {
   saveUsers(); // Guarda directamente en la nube
 };
 
-function executeReset() {
+// Cambia la declaración de executeReset para hacerla global
+window.executeReset = function () {
   if (currentEditingStudentKey && users[currentEditingStudentKey]) {
     const studentName = users[currentEditingStudentKey].name;
     if (
@@ -244,7 +246,7 @@ function executeReset() {
       adminEditStudent(currentEditingStudentKey);
     }
   }
-}
+};
 
 window.viewStudentBoard = function (key) {
   const student = users[key];
