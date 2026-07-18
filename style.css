@@ -222,7 +222,7 @@ button:hover {
   color: white;
   font-weight: bold;
   border-radius: 12px;
-  min-width: 140px;
+  min-width: 110px;
 }
 
 .admin-panel {
