@@ -339,14 +339,49 @@ footer {
 /* Forzamos que los botones superiores compartan línea horizontal de forma limpia */
 .admin-nav-actions {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-wrap: wrap; /* Permite que los elementos pasen a la siguiente línea */
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
 }
 
 .admin-nav-actions button {
-  width: auto !important;
+  /* En PC, intentamos que quepan 4 (o los que haya). 
+     Calculamos un ancho aproximado para que quepan 2x2 en tablets */
+  flex: 1 1 calc(50% - 10px);
+  max-width: 200px; /* Para que en PC no se vean excesivamente estirados */
+  padding: 10px 15px !important;
   white-space: nowrap;
-  margin: 0 !important;
-  padding: 10px 20px !important;
-  font-size: 0.95rem !important;
+}
+
+/* Ajuste específico para pantallas más grandes (PC) */
+@media (min-width: 769px) {
+  .admin-nav-actions button {
+    flex: 1; /* Permite que se acomoden todos en una sola línea */
+    max-width: none;
+  }
+}
+
+/* Ajuste para móviles (Teléfonos) */
+@media (max-width: 480px) {
+  .admin-nav-actions {
+    flex-direction: column;
+  }
+  .admin-nav-actions button {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
+
+#admin-delete-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+#admin-delete-btn:hover {
+  background: #ff0000 !important; /* Un rojo más brillante al pasar el mouse */
 }

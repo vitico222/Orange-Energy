@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-       
+
     <title>Orange Energy Board</title>
     <link rel="icon" href="./assets/IFL favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="style.css" />
@@ -94,7 +94,8 @@
               id="admin-close-btn"
               class="nav-btn"
               style="display: none; background: #555"
-            >Back to Manage
+            >
+              Back to Manage
             </button>
             <button
               id="admin-reset-btn"
@@ -102,7 +103,13 @@
               style="display: none; background: #d32f2f"
             >
               Reset Progress
-            
+            </button>
+            <button
+              id="admin-delete-btn"
+              style="background: #8b0000; color: white; display: none"
+            >
+              Delete Profile
+            </button>
           </div>
         </div>
         <input
@@ -124,22 +131,60 @@
     </div>
 
     <!-- Admin Login Modal -->
-<div id="admin-login-modal" class="modal">
-  <div class="modal-content">
-    <h3 style="margin-bottom: 1.5rem; color: var(--orange);">Admin Access</h3>
-    <input type="text" id="admin-user-input" placeholder="Username" style="margin-bottom: 10px;">
-    <input type="password" id="admin-pin-input" placeholder="PIN" style="margin-bottom: 20px;">
-    <div style="display: flex; gap: 10px;">
-       <button id="admin-login-cancel" style="background: #555; border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; flex: 1;">Cancel</button>
-       <button id="admin-login-submit" style="background: var(--orange); border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; flex: 1;">Login</button>
+    <div id="admin-login-modal" class="modal">
+      <div class="modal-content">
+        <h3 style="margin-bottom: 1.5rem; color: var(--orange)">
+          Admin Access
+        </h3>
+        <input
+          type="text"
+          id="admin-user-input"
+          placeholder="Username"
+          style="margin-bottom: 10px"
+        />
+        <input
+          type="password"
+          id="admin-pin-input"
+          placeholder="PIN"
+          style="margin-bottom: 20px"
+        />
+        <div style="display: flex; gap: 10px">
+          <button
+            id="admin-login-cancel"
+            style="
+              background: #555;
+              border: none;
+              padding: 10px;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              flex: 1;
+            "
+          >
+            Cancel
+          </button>
+          <button
+            id="admin-login-submit"
+            style="
+              background: var(--orange);
+              border: none;
+              padding: 10px;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              flex: 1;
+            "
+          >
+            Login
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
     <footer>
       <p>Developed by Victor M. Sáa © 2026 | IFL Idiomas - Orange Energy</p>
     </footer>
 
-  <script type="module" src="script.js"></script>
+    <script type="module" src="script.js"></script>
   </body>
 </html>

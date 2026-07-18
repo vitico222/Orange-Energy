@@ -2,41 +2,19 @@
 const ADMIN_USER = "Iflidiomas";
 const ADMIN_PIN = "2026";
 
-const casillaDescriptions = {
-  1: {
-    title: "Challenge 1",
-    desc: "Introduce yourself in English (video or audio)",
-  },
-  5: {
-    title: "Milestone 5",
-    desc: "Complete your first full conversation practice",
-  },
-  10: { title: "Milestone 10", desc: "Read and record a short story" },
-  15: {
-    title: "Milestone 15",
-    desc: "Write and present a paragraph about your goals",
-  },
-  20: { title: "Milestone 20", desc: "Intermediate listening + speaking test" },
-  25: {
-    title: "Milestone 25",
-    desc: "Create a 2-minute presentation in English",
-  },
-  30: {
-    title: "FINAL GRAND PRIZE",
-    desc: "Complete the full course challenge and receive your certificate!",
-  },
-};
+import { syllabus } from "./syllabus.js";
 
+// Creamos un objeto para guardar la configuración final
+export const casillaDescriptions = {};
+
+// Llenado automático con los datos del syllabus o valor genérico
 for (let i = 1; i <= 30; i++) {
-  if (!casillaDescriptions[i]) {
-    casillaDescriptions[i] = {
-      title: `Challenge ${i}`,
-      desc: `Complete the assigned task for level ${Math.ceil(i / 5)}`,
-    };
-  }
+  casillaDescriptions[i] = syllabus[i] || {
+    title: `Challenge ${i}`,
+    desc: `Complete the assigned task for level ${Math.ceil(i / 5)}`,
+  };
 }
 
-// ====================== INTEGRACIÓN DE FIREBASE ======================
 // ====================== INTEGRACIÓN DE FIREBASE ======================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
@@ -138,25 +116,36 @@ function updateAdminNavButtons(view) {
   const btnBackLogin = document.getElementById("admin-back-btn");
   const btnClose = document.getElementById("admin-close-btn");
   const btnReset = document.getElementById("admin-reset-btn");
+  const btnDelete = document.getElementById("admin-delete-btn");
 
-  if (!btnBackLogin || !btnClose || !btnReset) return;
+  // Ocultar todos primero
+  [btnBackLogin, btnClose, btnReset, btnDelete].forEach((btn) => {
+    if (btn) btn.style.display = "none";
+  });
 
-  btnBackLogin.style.display = "none";
-  btnClose.style.display = "none";
-  btnReset.style.display = "none";
-
+  // Mostrar según vista
   if (view === "list") {
     btnBackLogin.style.display = "block";
   } else if (view === "manage") {
     btnBackLogin.style.display = "block";
     btnClose.style.display = "block";
     btnReset.style.display = "block";
+    btnDelete.style.display = "block"; // Asegura que se muestre aquí
   } else if (view === "board") {
     btnBackLogin.style.display = "block";
     btnClose.style.display = "block";
   }
 }
 
+// Aseguramos que el evento se asigne una vez cuando el DOM esté listo
+document.addEventListener("DOMContentLoaded", () => {
+  const deleteBtn = document.getElementById("admin-delete-btn");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => {
+      window.deleteStudentProfile();
+    });
+  }
+});
 // ====================== RENDER BOARD ======================
 function renderBoard(progress = {}, containerId = "game-board") {
   const board =
@@ -285,6 +274,31 @@ window.executeReset = function () {
       users[currentEditingStudentKey].progress = {};
       window.saveUsers();
       window.adminEditStudent(currentEditingStudentKey);
+    }
+  }
+};
+
+//Botón delete ----------
+
+window.deleteStudentProfile = function () {
+  if (currentEditingStudentKey && users[currentEditingStudentKey]) {
+    const studentName = users[currentEditingStudentKey].name;
+
+    // Ventana de confirmación
+    if (
+      confirm(
+        `WARNING: Are you sure you want to permanently DELETE the profile for ${studentName}? This action cannot be undone.`,
+      )
+    ) {
+      // Borramos el usuario del objeto local
+      delete users[currentEditingStudentKey];
+
+      // Sincronizamos con Firebase
+      window.saveUsers();
+
+      // Volvemos a la lista principal
+      currentEditingStudentKey = null;
+      window.showAdminPanel();
     }
   }
 };
