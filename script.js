@@ -194,17 +194,25 @@ window.adminEditStudent = function (key) {
   updateAdminNavButtons("manage");
   container.innerHTML = "";
 
+  // --- SUSTITUYE DESDE AQUÍ ---
+  const titleContainer = document.createElement("div");
+  titleContainer.style =
+    "text-align: center; width: 100%; margin-bottom: 1.5rem;";
+
   const title = document.createElement("h3");
   title.style =
-    "text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;";
+    "display: inline-block; color: var(--orange); font-size: 1.8rem; margin: 0;";
   title.innerHTML = `Managing: ${sanitizeInput(student.name)}`;
-  container.appendChild(title);
 
+  titleContainer.appendChild(title);
+  container.appendChild(titleContainer);
+
+  // Ajustamos el estilo del contenedor de estadísticas a blanco y texto negro
   const statsDiv = document.createElement("div");
   statsDiv.style =
-    "display: flex; align-items: center; justify-content: space-between; background: rgba(232, 231, 231, 0.19); padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;";
+    "display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 16px 20px; border: 1px solid #898989; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; color: #000000;";
   statsDiv.innerHTML = `
-    <span style="font-size: 1.5rem; font-weight: bold;">
+    <span style="font-size: 2rem; font-weight: bold; color: #000000;">
       Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
     </span>
   `;
