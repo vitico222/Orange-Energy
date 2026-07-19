@@ -211,8 +211,8 @@ window.adminEditStudent = function (key) {
 
   const viewBoardBtn = document.createElement("button");
   viewBoardBtn.style =
-    "background: #4CAF50; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;";
-  viewBoardBtn.textContent = "👁️ View Student Board";
+    "background: #767676; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;";
+  viewBoardBtn.textContent = "Student Board";
   viewBoardBtn.addEventListener("click", () => window.viewStudentBoard(key));
 
   statsDiv.appendChild(viewBoardBtn);
@@ -308,9 +308,16 @@ window.viewStudentBoard = function (key) {
   if (!student) return;
   updateAdminNavButtons("board");
 
+  // Envolvemos student-board-view dentro de la clase board-container para recuperar el efecto
   let html = `
-    <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--orange); font-size: 1.8rem;">Board Progress - ${sanitizeInput(student.name)}</h3>
-    <div id="student-board-view" class="game-board" style="margin: 20px auto; max-width: 1250px;"></div>
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <h3 style="color: var(--orange); font-size: 1.8rem; display: inline-block; text-align: center;">
+        Board Progress - ${sanitizeInput(student.name)}
+      </h3>
+    </div>
+    <div class="board-container" style="margin: 0 auto; max-width: 1300px;">
+      <div id="student-board-view" class="game-board"></div>
+    </div>
   `;
   document.getElementById("students-list").innerHTML = html;
 
@@ -406,7 +413,8 @@ window.showAdminPanel = function () {
 window.renderStudentsList = function (filter = "") {
   const container = document.getElementById("students-list");
   if (!container) return;
-  container.innerHTML = "<h3>Registered Students</h3>";
+  container.innerHTML =
+    '<h3 style="text-align: center; margin: 0 auto 1rem auto; max-width: 420px;">Registered Students</h3>';
 
   Object.keys(users).forEach((key) => {
     const student = users[key];
@@ -421,21 +429,23 @@ window.renderStudentsList = function (filter = "") {
       div.style.justifyContent = "space-between";
 
       div.innerHTML = `
-        <div class="student-info">
-            <strong style="font-size: 1.8rem; display: block;">${sanitizeInput(student.name)}</strong>
-            <span style="color: #aaa; margin-top: 6px; font-size: 1.1rem; display: block;">
-                Unlocked: <strong>${unlockedCount}/30</strong>
-            </span>
-        </div>
-        <div class="actions" style="display: flex; gap: 10px;"></div>
-      `;
+    <div class="student-info">
+        <strong style="font-size: 1.8rem; display: block; color: #000000;">
+            ${sanitizeInput(student.name)}
+        </strong>
+        <span style="color: #767676; margin-top: 6px; font-size: 1.1rem; display: block;">
+            Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
+        </span>
+    </div>
+    <div class="actions" style="display: flex; gap: 10px;"></div>
+`;
 
       const actionsDiv = div.querySelector(".actions");
 
       // 1. Botón "View Board"
       const viewBtn = document.createElement("button");
-      viewBtn.textContent = "👁️ View Board";
-      viewBtn.style.background = "#4CAF50"; // Verde
+      viewBtn.textContent = "Student Board";
+      viewBtn.style.background = "#767676"; // Gris
       viewBtn.addEventListener("click", () => window.viewStudentBoard(key));
 
       // 2. Botón "Manage Student"
