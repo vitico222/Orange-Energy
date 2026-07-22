@@ -2,17 +2,30 @@
 const ADMIN_USER = "Iflidiomas";
 const ADMIN_PIN = "2026";
 
-import { syllabus } from "./syllabus.js";
+import { syllabusInPerson } from "./syllabus-in-person.js";
+import { syllabusOnline } from "./syllabus-online.js";
+import { syllabusKids } from "./syllabus-kids.js";
 
-// Creamos un objeto para guardar la configuración final
-export const casillaDescriptions = {};
+// Objeto contenedor que centraliza los tres syllabus
+const syllabiCollection = {
+  "in-person": syllabusInPerson,
+  online: syllabusOnline,
+  kids: syllabusKids,
+};
 
-// Llenado automático con los datos del syllabus o valor genérico
-for (let i = 1; i <= 30; i++) {
-  casillaDescriptions[i] = syllabus[i] || {
-    title: `Challenge ${i}`,
-    desc: `Complete the assigned task for level ${Math.ceil(i / 5)}`,
-  };
+// Variable global activa para las descripciones de las casillas
+export let casillaDescriptions = {};
+
+// Función auxiliar para cargar dinámicamente el syllabus según la modalidad
+function loadStudentSyllabus(modality) {
+  const selectedSyllabus = syllabiCollection[modality] || syllabusInPerson; // Fallback por defecto
+
+  for (let i = 1; i <= 30; i++) {
+    casillaDescriptions[i] = selectedSyllabus[i] || {
+      title: `Challenge ${i}`,
+      desc: `Complete the assigned task for level ${Math.ceil(i / 5)}`,
+    };
+  }
 }
 
 // ====================== INTEGRACIÓN DE FIREBASE ======================
@@ -316,11 +329,13 @@ window.viewStudentBoard = function (key) {
   if (!student) return;
   updateAdminNavButtons("board");
 
-  // Envolvemos student-board-view dentro de la clase board-container para recuperar el efecto
+  // CARGAMOS EL SYLLABUS SEGÚN LA MODALIDAD DEL ESTUDIANTE
+  loadStudentSyllabus(student.modality);
+
   let html = `
     <div style="text-align: center; margin-bottom: 1.5rem;">
       <h3 style="color: var(--orange); font-size: 1.8rem; display: inline-block; text-align: center;">
-        Board Progress - ${sanitizeInput(student.name)}
+        Board Progress - ${sanitizeInput(student.name)} (${student.modality || "in-person"})
       </h3>
     </div>
     <div class="board-container" style="margin: 0 auto; max-width: 1300px;">
@@ -359,6 +374,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
       name: users[key].name,
       key,
       progress: users[key].progress || {},
+      modality: users[key].modality || "in-person", // <--- Aquí cargamos la modalidad guardada
     };
     showBoard();
   } else {
@@ -372,14 +388,57 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   let name = document.getElementById("signup-name").value.trim();
   let pin = document.getElementById("signup-pin").value.trim();
 
-  if (pin.length !== 4) return alert("PIN must be 4 digits (DDMM)");
+  // 1. VALIDACIÓN DE NOMBRE
+  if (!name) {
+    alert("Please enter a student name.");
+    return;
+  }
+
+  // 2. VALIDACIÓN DE PIN Y SU LONGITUD
+  if (!pin) {
+    alert("Please enter a 4-digit PIN.");
+    return;
+  }
+  if (pin.length !== 4) {
+    alert("PIN must be exactly 4 digits.");
+    return;
+  }
+
+  // 3. VALIDACIÓN DE MODALIDAD
+  if (!selectedModality) {
+    alert(
+      "Please select a study modality (In-Person, Online, or Kids & Teens).",
+    );
+    return;
+  }
 
   const key = (name + pin).toLowerCase().replace(/\s/g, "");
-  if (users[key]) return alert("This student already exists.");
+  if (users[key]) {
+    alert("This student already exists.");
+    return;
+  }
 
-  users[key] = { name: name, progress: {} };
+  // GUARDADO CON MODALIDAD
+  users[key] = {
+    name: name,
+    progress: {},
+    modality: selectedModality,
+  };
+
   window.saveUsers();
+
+  // MENSAJE DE REGISTRO EXITOSO (En inglés)
   alert("Account created successfully!");
+
+  // Limpiar selección para el próximo registro
+  selectedModality = null;
+  document.getElementById("signup-form").reset(); // Limpia inputs
+
+  // Resetear colores visuales de los botones de modalidad
+  document
+    .querySelectorAll(".mod-btn")
+    .forEach((btn) => (btn.style.backgroundColor = "#767676"));
+
   document.getElementById("back-to-login").click();
 });
 
@@ -390,6 +449,10 @@ function showBoard() {
   document.getElementById("board-screen").classList.add("active");
   document.getElementById("student-name-display").textContent =
     currentUser.name;
+
+  // CARGAMOS EL SYLLABUS CORRESPONDIENTE A SU MODALIDAD
+  loadStudentSyllabus(currentUser.modality);
+
   renderBoard(currentUser.progress);
 }
 
@@ -536,6 +599,21 @@ document.getElementById("admin-back-btn").addEventListener("click", () => {
 document.getElementById("close-modal").addEventListener("click", () => {
   document.getElementById("casilla-modal").style.display = "none";
 });
+
+// --- LOGICA DE SELECCION DE MODALIDAD ---
+let selectedModality = null;
+
+window.selectModality = function (modality, btnElement) {
+  selectedModality = modality;
+
+  // Resetear color de todos los botones de modalidad
+  document.querySelectorAll(".mod-btn").forEach((btn) => {
+    btn.style.backgroundColor = "#767676"; // Color original
+  });
+
+  // Cambiar color del botón seleccionado
+  btnElement.style.backgroundColor = "#fe5c14"; // Color naranja primario
+};
 
 // ====================== INIT ======================
 document.getElementById("login-screen").classList.add("active");

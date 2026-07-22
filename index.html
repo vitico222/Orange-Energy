@@ -56,10 +56,74 @@
             <input
               type="text"
               id="signup-pin"
-              maxlength="4"
-              placeholder="Birthday DDMM"
+              placeholder="PIN (DDMM)"
               required
             />
+
+            <!-- NUEVOS BOTONES DE MODALIDAD -->
+            <div
+              id="modality-selector"
+              style="margin: 1rem 0; text-align: center"
+            >
+              <p style="margin-bottom: 0.5rem; color: #fff">Select Modality:</p>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  justify-content: center;
+                  flex-wrap: wrap;
+                "
+              >
+                <button
+                  type="button"
+                  class="mod-btn"
+                  onclick="selectModality('in-person', this)"
+                  style="
+                    background: #767676;
+                    color: white;
+                    width: auto;
+                    padding: 10px 15px;
+                    border: none;
+                    border-radius: 12px;
+                    cursor: pointer;
+                  "
+                >
+                  In-Person
+                </button>
+                <button
+                  type="button"
+                  class="mod-btn"
+                  onclick="selectModality('online', this)"
+                  style="
+                    background: #767676;
+                    color: white;
+                    width: auto;
+                    padding: 10px 15px;
+                    border: none;
+                    border-radius: 12px;
+                    cursor: pointer;
+                  "
+                >
+                  Online
+                </button>
+                <button
+                  type="button"
+                  class="mod-btn"
+                  onclick="selectModality('kids', this)"
+                  style="
+                    background: #767676;
+                    color: white;
+                    width: auto;
+                    padding: 10px 15px;
+                    border: none;
+                    border-radius: 12px;
+                    cursor: pointer;
+                  "
+                >
+                  Kids & Teens
+                </button>
+              </div>
+            </div>
             <button type="submit">Create Account</button>
           </form>
           <button id="back-to-login" class="secondary-btn">
