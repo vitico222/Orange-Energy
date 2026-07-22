@@ -382,6 +382,9 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   }
 });
 
+// Variable de control para saber si el último modal mostrado fue el de éxito
+let isSuccessModal = false;
+
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -391,29 +394,43 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   let name = nameInput ? nameInput.value.trim() : "";
   let pin = pinInput ? pinInput.value.trim() : "";
 
+  const modal = document.getElementById("casilla-modal");
+  const modalTitle = document.getElementById("modal-title");
+  const modalDesc = document.getElementById("modal-description");
+
+  // Función interna para mostrar tu propio diálogo personalizado
+  function showSignupAlert(title, message, success = false) {
+    if (!modal) return;
+    modalTitle.textContent = title;
+    modalDesc.textContent = message;
+    modal.style.display = "flex";
+    isSuccessModal = success;
+  }
+
   // 1. VALIDACIÓN DE NOMBRE
   if (!name) {
-    alert("Please enter a student name.");
+    showSignupAlert("Incomplete Data", "Please enter a student name.");
     if (nameInput) nameInput.focus();
     return;
   }
 
   // 2. VALIDACIÓN DE PIN
   if (!pin) {
-    alert("Please enter a 4-digit PIN.");
+    showSignupAlert("Incomplete Data", "Please enter a 4-digit PIN.");
     if (pinInput) pinInput.focus();
     return;
   }
 
   if (pin.length !== 4) {
-    alert("PIN must be exactly 4 digits.");
+    showSignupAlert("Invalid PIN", "PIN must be exactly 4 digits.");
     if (pinInput) pinInput.focus();
     return;
   }
 
   // 3. VALIDACIÓN DE MODALIDAD
   if (!selectedModality) {
-    alert(
+    showSignupAlert(
+      "Modality Required",
       "Please select a study modality (In-Person, Online, or Kids & Teens).",
     );
     return;
@@ -421,7 +438,7 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
 
   const key = (name + pin).toLowerCase().replace(/\s/g, "");
   if (users[key]) {
-    alert("This student already exists.");
+    showSignupAlert("Account Exists", "This student already exists.");
     return;
   }
 
@@ -434,8 +451,8 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
 
   window.saveUsers();
 
-  // MENSAJE DE ÉXITO
-  alert("Account created successfully!");
+  // MENSAJE DE ÉXITO CON TU PROPIO MODAL (marcado como true)
+  showSignupAlert("Success!", "Account created successfully!", true);
 
   // Limpiar selección y formulario
   selectedModality = null;
@@ -445,8 +462,6 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   document
     .querySelectorAll(".mod-btn")
     .forEach((btn) => (btn.style.backgroundColor = "#767676"));
-
-  document.getElementById("back-to-login").click();
 });
 
 function showBoard() {
@@ -605,6 +620,12 @@ document.getElementById("admin-back-btn").addEventListener("click", () => {
 
 document.getElementById("close-modal").addEventListener("click", () => {
   document.getElementById("casilla-modal").style.display = "none";
+
+  // Si el modal que acabamos de cerrar era el de éxito, regresamos al login
+  if (isSuccessModal) {
+    isSuccessModal = false;
+    document.getElementById("back-to-login").click();
+  }
 });
 
 // --- LOGICA DE SELECCION DE MODALIDAD ---
