@@ -385,22 +385,29 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
 
-  let name = document.getElementById("signup-name").value.trim();
-  let pin = document.getElementById("signup-pin").value.trim();
+  let nameInput = document.getElementById("signup-name");
+  let pinInput = document.getElementById("signup-pin");
+
+  let name = nameInput ? nameInput.value.trim() : "";
+  let pin = pinInput ? pinInput.value.trim() : "";
 
   // 1. VALIDACIÓN DE NOMBRE
   if (!name) {
     alert("Please enter a student name.");
+    if (nameInput) nameInput.focus();
     return;
   }
 
-  // 2. VALIDACIÓN DE PIN Y SU LONGITUD
+  // 2. VALIDACIÓN DE PIN
   if (!pin) {
     alert("Please enter a 4-digit PIN.");
+    if (pinInput) pinInput.focus();
     return;
   }
+
   if (pin.length !== 4) {
     alert("PIN must be exactly 4 digits.");
+    if (pinInput) pinInput.focus();
     return;
   }
 
@@ -427,12 +434,12 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
 
   window.saveUsers();
 
-  // MENSAJE DE REGISTRO EXITOSO (En inglés)
+  // MENSAJE DE ÉXITO
   alert("Account created successfully!");
 
-  // Limpiar selección para el próximo registro
+  // Limpiar selección y formulario
   selectedModality = null;
-  document.getElementById("signup-form").reset(); // Limpia inputs
+  document.getElementById("signup-form").reset();
 
   // Resetear colores visuales de los botones de modalidad
   document
