@@ -493,6 +493,7 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 });
 
 // ====================== ADMIN MAIN VIEW ======================
+// ====================== ADMIN MAIN VIEW ======================
 window.showAdminPanel = function () {
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
@@ -500,51 +501,85 @@ window.showAdminPanel = function () {
     .querySelectorAll(".screen")
     .forEach((s) => s.classList.remove("active"));
   document.getElementById("admin-screen").classList.add("active");
+
+  // Limpiar filtros al entrar
+  const searchInput = document.getElementById("search-students");
+  const modalitySelect = document.getElementById("filter-modality");
+  if (searchInput) searchInput.value = "";
+  if (modalitySelect) modalitySelect.value = "";
+
   window.renderStudentsList();
 };
 
-window.renderStudentsList = function (filter = "") {
+// Función auxiliar para disparar el filtrado combinando texto y modalidad
+function triggerFilter() {
+  const text = document.getElementById("search-students")?.value || "";
+  const modality = document.getElementById("filter-modality")?.value || "";
+  window.renderStudentsList(text, modality);
+}
+
+// Vincular los eventos de los filtros una sola vez de forma segura
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("search-students");
+  const modalitySelect = document.getElementById("filter-modality");
+
+  if (searchInput) searchInput.addEventListener("input", triggerFilter);
+  if (modalitySelect) modalitySelect.addEventListener("change", triggerFilter);
+});
+
+window.renderStudentsList = function (
+  filter = "",
+  selectedModalityFilter = "",
+) {
   const container = document.getElementById("students-list");
   if (!container) return;
-  container.innerHTML =
-    '<h3 style="text-align: center; margin: 0 auto 1rem auto; max-width: 420px;">Registered Students</h3>';
+
+  container.innerHTML = "";
+
+  let matchCount = 0;
 
   Object.keys(users).forEach((key) => {
     const student = users[key];
-    if (student.name.toLowerCase().includes(filter.toLowerCase())) {
+    const nameMatches = student.name
+      .toLowerCase()
+      .includes(filter.toLowerCase());
+    const modalityMatches =
+      !selectedModalityFilter || student.modality === selectedModalityFilter;
+
+    if (nameMatches && modalityMatches) {
+      matchCount++;
       const unlockedCount = Object.keys(student.progress || {}).length;
 
       const div = document.createElement("div");
-      div.className = "student-row";
-      // Aseguramos que el contenedor de los botones tenga espacio
-      div.style.display = "flex";
-      div.style.alignItems = "center";
-      div.style.justifyContent = "space-between";
+      div.className = "student-row"; // Usa directamente tu diseño y hover del CSS
 
       div.innerHTML = `
-    <div class="student-info">
-        <strong style="font-size: 1.8rem; display: block; color: #000000;">
-            ${sanitizeInput(student.name)}
-        </strong>
-        <span style="color: #767676; margin-top: 6px; font-size: 1.1rem; display: block;">
-            Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
-        </span>
-    </div>
-    <div class="actions" style="display: flex; gap: 10px;"></div>
-`;
+        <div class="student-info">
+            <strong style="font-size: 1.8rem; display: block; color: #000000;">
+                ${sanitizeInput(student.name)}
+            </strong>
+            <span style="color: #767676; margin-top: 6px; font-size: 1.1rem; display: block;">
+                Modality: <strong style="color: var(--orange);">${student.modality || "in-person"}</strong> | Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
+            </span>
+        </div>
+        <div class="actions" style="display: flex; gap: 10px;"></div>
+      `;
 
       const actionsDiv = div.querySelector(".actions");
 
-      // 1. Botón "View Board"
       const viewBtn = document.createElement("button");
       viewBtn.textContent = "Student Board";
-      viewBtn.style.background = "#767676"; // Gris
-      viewBtn.addEventListener("click", () => window.viewStudentBoard(key));
+      viewBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.viewStudentBoard(key);
+      });
 
-      // 2. Botón "Manage Student"
       const manageBtn = document.createElement("button");
       manageBtn.textContent = "Manage Student";
-      manageBtn.addEventListener("click", () => window.adminEditStudent(key));
+      manageBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.adminEditStudent(key);
+      });
 
       actionsDiv.appendChild(viewBtn);
       actionsDiv.appendChild(manageBtn);
@@ -552,9 +587,10 @@ window.renderStudentsList = function (filter = "") {
     }
   });
 
-  if (Object.keys(users).length === 0) {
-    container.innerHTML +=
-      '<p style="text-align:center; color:#888; padding: 2rem;">No students registered yet.</p>';
+  if (matchCount === 0) {
+    container.innerHTML += `
+      <p style="text-align:center; color:#888; padding: 2rem;">No students found matching the criteria.</p>
+    `;
   }
 };
 

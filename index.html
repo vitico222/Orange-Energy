@@ -182,11 +182,45 @@
             </button>
           </div>
         </div>
-        <input
-          type="text"
-          id="search-students"
-          placeholder="Search students..."
-        />
+
+        <!-- Controles de búsqueda y filtros fijos y limpios -->
+        <div
+          style="
+            display: flex;
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto 1.5rem auto;
+            flex-wrap: wrap;
+            justify-content: center;
+          "
+        >
+          <input
+            type="text"
+            id="search-students"
+            placeholder="Search by name..."
+            style="flex: 1; min-width: 200px; margin: 0; padding: 0.8rem 1rem"
+          />
+          <select
+            id="filter-modality"
+            style="
+              flex: 1;
+              min-width: 180px;
+              padding: 0.8rem 1rem;
+              border-radius: 12px;
+              border: none;
+              font-size: 1.1rem;
+              background: #333;
+              color: white;
+              cursor: pointer;
+            "
+          >
+            <option value="">All Modalities</option>
+            <option value="in-person">In-Person</option>
+            <option value="online">Online</option>
+            <option value="kids">Kids & Teens</option>
+          </select>
+        </div>
+
         <div id="students-list"></div>
       </div>
     </main>
