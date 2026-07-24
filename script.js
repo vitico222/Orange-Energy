@@ -258,7 +258,7 @@ window.adminEditStudent = function (key) {
     `;
 
     const lockBtn = document.createElement("button");
-    lockBtn.style = `background: ${unlocked ? "#d32f2f" : "#FF6200"}; color: white; padding: 12px 24px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.05rem; margin: 0; width: auto; min-width: 130px;`;
+    lockBtn.style = `background: ${unlocked ? "#960707" : "#FF6200"}; color: white; padding: 12px 24px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.05rem; margin: 0; width: auto; min-width: 130px;`;
     lockBtn.textContent = unlocked ? "🔒 Lock" : "🔓 Unlock";
 
     lockBtn.addEventListener("click", () => window.toggleCasilla(key, i));

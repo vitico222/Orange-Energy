@@ -353,11 +353,6 @@ footer {
   transform: scale(1.08);
 }
 
-/* ==========================================================================
-   AGREGAR AL FINAL DE TU ARCHIVO STYLE.CSS EXISTENTE O SUSTITUIR ESTAS LINEAS
-   ========================================================================== */
-
-/* Eliminamos por completo el contenedor con scroll secundario incómodo */
 #manage-list {
   max-height: none !important;
   overflow-y: visible !important;
@@ -406,12 +401,8 @@ footer {
 #admin-delete-btn {
   padding: 10px 20px;
   border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s;
-}
 
-#admin-delete-btn:hover {
-  background: #ff0000 !important; /* Un rojo más brillante al pasar el mouse */
+  cursor: pointer;
+
+  transition: background 0.3s;
 }
