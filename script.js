@@ -118,6 +118,14 @@ window.saveUsers = function () {
 };
 
 // ====================== HELPER FUNCTIONS ======================
+
+// Función auxiliar para mostrar el nombre completo de la modalidad
+function formatModalityName(modality) {
+  if (modality === "kids") return "Kids & Teens";
+  if (modality === "online") return "Online";
+  return "In-Person";
+}
+
 function sanitizeInput(text) {
   const element = document.createElement("div");
   element.innerText = text;
@@ -207,7 +215,6 @@ window.adminEditStudent = function (key) {
   updateAdminNavButtons("manage");
   container.innerHTML = "";
 
-  // --- SUSTITUYE DESDE AQUÍ ---
   const titleContainer = document.createElement("div");
   titleContainer.style =
     "text-align: center; width: 100%; margin-bottom: 1.5rem;";
@@ -215,12 +222,14 @@ window.adminEditStudent = function (key) {
   const title = document.createElement("h3");
   title.style =
     "display: inline-block; color: var(--orange); font-size: 1.8rem; margin: 0;";
-  title.innerHTML = `Managing: ${sanitizeInput(student.name)}`;
+
+  // Modificado para mostrar la modalidad formateada
+  const formattedModality = formatModalityName(student.modality);
+  title.innerHTML = `Managing: ${sanitizeInput(student.name)} (${formattedModality})`;
 
   titleContainer.appendChild(title);
   container.appendChild(titleContainer);
 
-  // Ajustamos el estilo del contenedor de estadísticas a blanco y texto negro
   const statsDiv = document.createElement("div");
   statsDiv.style =
     "display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 16px 20px; border: 1px solid #898989; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; color: #000000;";
@@ -329,13 +338,14 @@ window.viewStudentBoard = function (key) {
   if (!student) return;
   updateAdminNavButtons("board");
 
-  // CARGAMOS EL SYLLABUS SEGÚN LA MODALIDAD DEL ESTUDIANTE
   loadStudentSyllabus(student.modality);
+
+  const formattedModality = formatModalityName(student.modality);
 
   let html = `
     <div style="text-align: center; margin-bottom: 1.5rem;">
       <h3 style="color: var(--orange); font-size: 1.8rem; display: inline-block; text-align: center;">
-        Board Progress - ${sanitizeInput(student.name)} (${student.modality || "in-person"})
+        Board Progress - ${sanitizeInput(student.name)} (${formattedModality})
       </h3>
     </div>
     <div class="board-container" style="margin: 0 auto; max-width: 1300px;">
@@ -549,9 +559,10 @@ window.renderStudentsList = function (
     if (nameMatches && modalityMatches) {
       matchCount++;
       const unlockedCount = Object.keys(student.progress || {}).length;
+      const formattedModality = formatModalityName(student.modality);
 
       const div = document.createElement("div");
-      div.className = "student-row"; // Usa directamente tu diseño y hover del CSS
+      div.className = "student-row";
 
       div.innerHTML = `
         <div class="student-info">
@@ -559,7 +570,7 @@ window.renderStudentsList = function (
                 ${sanitizeInput(student.name)}
             </strong>
             <span style="color: #767676; margin-top: 6px; font-size: 1.1rem; display: block;">
-                Modality: <strong style="color: var(--orange);">${student.modality || "in-person"}</strong> | Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
+                Modality: <strong style="color: var(--orange);">${formattedModality}</strong> | Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
             </span>
         </div>
         <div class="actions" style="display: flex; gap: 10px;"></div>
