@@ -29,7 +29,7 @@ body {
 
 header {
   background: linear-gradient(135deg, #2d2d2d, #767676);
-  padding: 1.2rem 2rem;
+  padding: 0.1rem 2rem;
   display: flex;
   align-items: center;
   border-bottom: 4px solid var(--orange);
@@ -45,7 +45,7 @@ header {
 }
 
 .logo {
-  height: 5rem;
+  height: 7rem;
   border-radius: 50%;
   /* Border removed */
 }
@@ -256,9 +256,9 @@ button:hover {
   min-width: 110px;
 }
 
-.admin-panel {
+/*.admin-panel {
   margin-bottom: 1.5rem;
-}
+}*/
 
 /* Responsive */
 
