@@ -190,7 +190,8 @@ button:hover {
 }
 
 .casilla.unlocked {
-  background: linear-gradient(145deg, #4caf50, #2e7d32);
+  /*background: linear-gradient(145deg, #4caf50, #2e7d32);*/
+  background: linear-gradient(145deg, #079cff, #005dff);
   border-color: var(--orange);
   color: white;
 }
