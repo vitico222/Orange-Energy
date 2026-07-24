@@ -168,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 // ====================== RENDER BOARD ======================
+// ====================== RENDER BOARD ======================
 function renderBoard(progress = {}, containerId = "game-board") {
   const board =
     document.getElementById(containerId) ||
@@ -182,12 +183,15 @@ function renderBoard(progress = {}, containerId = "game-board") {
     if ([5, 10, 15, 20, 25].includes(i)) casilla.classList.add("special");
     if (i === 30) casilla.classList.add("final");
 
-    casilla.innerHTML =
-      i === 30 && progress[i]
-        ? `<span>👑</span>`
-        : progress[i]
-          ? `<span>🏆</span>`
-          : `<span>${i}</span>`;
+    // LÓGICA DE STICKERS
+    if (progress[i]) {
+      // Si la casilla está desbloqueada, cargamos su sticker respectivo
+      // Asumiendo que están en una carpeta llamada "stickers" con nombre "sticker_X.png"
+      casilla.innerHTML = `<img src="assets/stickers/sticker_${i}.png" alt="Sticker ${i}" style="width: 80%; height: 80%; object-fit: contain; pointer-events: none;" />`;
+    } else {
+      // Si está bloqueada, muestra el número de la casilla
+      casilla.innerHTML = `<span>${i}</span>`;
+    }
 
     casilla.addEventListener("click", () => showCasillaModal(i));
     board.appendChild(casilla);
