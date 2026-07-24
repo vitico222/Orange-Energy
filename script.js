@@ -343,7 +343,7 @@ window.viewStudentBoard = function (key) {
   const formattedModality = formatModalityName(student.modality);
 
   let html = `
-    <div style="text-align: center; margin-bottom: 1.5rem;">
+    <div style="text-align: center; margin-bottom: 1rem;">
       <h3 style="color: var(--orange); font-size: 1.8rem; display: inline-block; text-align: center;">
         Board Progress - ${sanitizeInput(student.name)} (${formattedModality})
       </h3>
