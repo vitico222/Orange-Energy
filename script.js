@@ -199,14 +199,83 @@ function renderBoard(progress = {}, containerId = "game-board") {
 }
 
 // ====================== MODAL ======================
+// ====================== MODAL ======================
+// ====================== MODAL CON EFECTO DE CONFETÍ ======================
 function showCasillaModal(num) {
   const modal = document.getElementById("casilla-modal");
   if (!modal) return;
-  document.getElementById("modal-title").textContent =
-    casillaDescriptions[num].title;
-  document.getElementById("modal-description").textContent =
-    casillaDescriptions[num].desc;
+
+  const data =
+    casillaDescriptions && casillaDescriptions[num]
+      ? casillaDescriptions[num]
+      : { title: `Challenge ${num}`, desc: "Description not available." };
+
+  const modalContent = modal.querySelector(".modal-content");
+  if (modalContent) {
+    modalContent.innerHTML = `
+      <span id="close-modal" class="close">&times;</span>
+      <div class="modal-sticker-container">
+        <img src="assets/stickers/sticker_${num}.png" alt="Sticker ${num}" class="modal-sticker-img" />
+      </div>
+      <h3 id="modal-title">${sanitizeInput(data.title)}</h3>
+      <p id="modal-description">${sanitizeInput(data.desc)}</p>
+    `;
+
+    // Reasignar evento de cierre
+    const closeBtn = modalContent.querySelector("#close-modal");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+        if (typeof isSuccessModal !== "undefined" && isSuccessModal) {
+          isSuccessModal = false;
+          const backLogin = document.getElementById("back-to-login");
+          if (backLogin) backLogin.click();
+        }
+      });
+    }
+  }
+
+  // Mostramos el modal primero
   modal.style.display = "flex";
+
+  // RETRASO DE 1 SEGUNDO ANTES DE LA EXPLOSIÓN
+  setTimeout(() => {
+    // Verificamos que el modal siga abierto antes de lanzar el confetí
+    if (modal.style.display === "flex") {
+      // CONFIGURACIÓN DE LA DURACIÓN (3 Segundos)
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = {
+        startVelocity: 30,
+        spread: 360,
+        ticks: 60,
+        zIndex: 99999,
+      };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function () {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+
+        // Lanzamos confetí desde el centro de la pantalla (donde está el modal)
+        confetti(
+          Object.assign({}, defaults, {
+            particleCount,
+            origin: { x: randomInRange(0.4, 0.6), y: randomInRange(0.4, 0.6) },
+            colors: ["#fe5c14", "#079cff", "#ffd700", "#ffffff"], // Colores alineados a tu temática
+          }),
+        );
+      }, 250);
+    }
+  }, 1000); // 1000 milisegundos = 1 segundo de retardo
 }
 
 // ====================== ADMIN PANEL FUNCTIONS ======================
