@@ -265,12 +265,6 @@ button:hover {
   min-width: 110px;
 }
 
-/*.admin-panel {
-  margin-bottom: 1.5rem;
-}*/
-
-/* Responsive */
-
 /* Vista de 3 columnas para móviles (Pendiente 3) */
 @media (max-width: 480px) {
   .game-board {
@@ -439,7 +433,6 @@ footer {
 .modal-sticker-container {
   width: 120px;
   height: 120px;
-
   border-radius: 50%;
   display: flex;
   justify-content: center;

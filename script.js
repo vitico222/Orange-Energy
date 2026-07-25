@@ -594,8 +594,11 @@ window.renderStudentsList = function (
 
   container.innerHTML = "";
 
+  // 1. Calculamos el total general de estudiantes registrados
+  const totalStudents = Object.keys(users).length;
   let matchCount = 0;
 
+  // Pre-contamos cuántos estudiantes coinciden con el filtro de modalidad y búsqueda antes de renderizar
   Object.keys(users).forEach((key) => {
     const student = users[key];
     const nameMatches = student.name
@@ -606,6 +609,45 @@ window.renderStudentsList = function (
 
     if (nameMatches && modalityMatches) {
       matchCount++;
+    }
+  });
+
+  // 2. Creamos la tarjeta superior dinámica con ambos contadores (general y filtrado)
+  const statsHeader = document.createElement("div");
+  statsHeader.style =
+    "background: linear-gradient(135deg, rgba(124, 124, 124, 0.8), rgba(160, 160, 160, 0.5)); padding: 14px 20px; border: 1px solid #898989; border-radius: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;  color: #000000; flex-wrap: wrap; gap: 10px;";
+
+  let statsHtml = `
+    <span style="font-size: 1.2rem; font-weight: bold;">
+      Students: <strong style="color: var(--orange);">${totalStudents}</strong>
+    </span>
+  `;
+
+  if (selectedModalityFilter || filter) {
+    const activeModalityText = selectedModalityFilter
+      ? formatModalityName(selectedModalityFilter)
+      : "All Modalities";
+    statsHtml += `
+      <span style="font-size: 1.1rem; color: #555555;">
+        (${activeModalityText}): <strong style="color: var(--orange);">${matchCount}</strong>
+      </span>
+    `;
+  }
+  statsHeader.innerHTML = statsHtml;
+  container.appendChild(statsHeader);
+
+  // 3. Procesamos de nuevo para renderizar los elementos en la lista
+  let renderMatchCounter = 0;
+  Object.keys(users).forEach((key) => {
+    const student = users[key];
+    const nameMatches = student.name
+      .toLowerCase()
+      .includes(filter.toLowerCase());
+    const modalityMatches =
+      !selectedModalityFilter || student.modality === selectedModalityFilter;
+
+    if (nameMatches && modalityMatches) {
+      renderMatchCounter++;
       const unlockedCount = Object.keys(student.progress || {}).length;
       const formattedModality = formatModalityName(student.modality);
 
@@ -617,7 +659,7 @@ window.renderStudentsList = function (
             <strong style="font-size: 1.8rem; display: block; color: #000000;">
                 ${sanitizeInput(student.name)}
             </strong>
-            <span style="color: #767676; margin-top: 6px; font-size: 1.1rem; display: block;">
+            <span style="color: #767676; margin-top: 4px; font-size: 1.1rem; display: block;">
                 Modality: <strong style="color: var(--orange);">${formattedModality}</strong> | Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
             </span>
         </div>
@@ -646,7 +688,7 @@ window.renderStudentsList = function (
     }
   });
 
-  if (matchCount === 0) {
+  if (renderMatchCounter === 0) {
     container.innerHTML += `
       <p style="text-align:center; color:#888; padding: 2rem;">No students found matching the criteria.</p>
     `;
