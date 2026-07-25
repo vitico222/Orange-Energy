@@ -510,3 +510,19 @@ footer {
     font-size: 0.95rem;
   }
 }
+
+/* ==================== MODAL DE ACCESO ADMIN - BOTONES ==================== */
+#admin-login-modal button#admin-login-submit,
+#admin-login-modal button#admin-login-cancel {
+  width: 145px; /* Ancho fijo equilibrado (puedes ajustarlo a 150px si los prefieres un poco más amplios) */
+  display: inline-block;
+  margin: 0.5rem 0.4rem; /* Margen horizontal para separarlos ligeramente entre sí */
+  text-align: center;
+}
+
+/* Contenedor interno opcional para asegurar que se centren codo a codo de forma limpia */
+#admin-login-modal .login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
