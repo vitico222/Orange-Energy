@@ -104,9 +104,9 @@ input {
 }
 
 button {
-  width: 100%;
-  padding: 1rem;
-  margin: 0.8rem 0;
+  width: 87%;
+  padding: 0.8rem;
+  margin: 0.4rem 0;
   border: 2px solid var(--tema-gris-claro);
   border-radius: 12px;
   font-size: 1.1rem;
@@ -514,7 +514,7 @@ footer {
 /* ==================== MODAL DE ACCESO ADMIN - BOTONES ==================== */
 #admin-login-modal button#admin-login-submit,
 #admin-login-modal button#admin-login-cancel {
-  width: 145px; /* Ancho fijo equilibrado (puedes ajustarlo a 150px si los prefieres un poco más amplios) */
+  width: 110px; /* Ancho fijo equilibrado (puedes ajustarlo a 150px si los prefieres un poco más amplios) */
   display: inline-block;
   margin: 0.5rem 0.4rem; /* Margen horizontal para separarlos ligeramente entre sí */
   text-align: center;
