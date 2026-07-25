@@ -615,7 +615,7 @@ window.renderStudentsList = function (
   // 2. Creamos la tarjeta superior dinámica con ambos contadores (general y filtrado)
   const statsHeader = document.createElement("div");
   statsHeader.style =
-    "background: linear-gradient(135deg, rgba(124, 124, 124, 0.8), rgba(160, 160, 160, 0.5)); padding: 14px 20px; border: 1px solid #898989; border-radius: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;  color: #000000; flex-wrap: wrap; gap: 10px;";
+    "background: linear-gradient(135deg, rgba(117, 117, 117, 0.8), rgba(151, 151, 151, 0.5)); padding: 14px 20px; border: 1px solid #898989; border-radius: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;  color: #000000; flex-wrap: wrap; gap: 10px;";
 
   let statsHtml = `
     <span style="font-size: 1.2rem; font-weight: bold;">
