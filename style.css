@@ -366,40 +366,54 @@ footer {
   gap: 10px;
 }
 
-/* Forzamos que los botones superiores compartan línea horizontal de forma limpia */
+/* ==================== ADMIN NAV ACTIONS ==================== */
 .admin-nav-actions {
   display: flex;
-  flex-wrap: wrap; /* Permite que los elementos pasen a la siguiente línea */
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
   width: 100%;
 }
 
 .admin-nav-actions button {
-  /* En PC, intentamos que quepan 4 (o los que haya). 
-     Calculamos un ancho aproximado para que quepan 2x2 en tablets */
-  flex: 1 1 calc(50% - 10px);
-  max-width: 200px; /* Para que en PC no se vean excesivamente estirados */
-  padding: 10px 15px !important;
-  white-space: nowrap;
+  white-space: nowrap !important;
 }
 
-/* Ajuste específico para pantallas más grandes (PC) */
+/* Ajuste para pantallas grandes (PC) */
 @media (min-width: 769px) {
   .admin-nav-actions button {
-    flex: 1; /* Permite que se acomoden todos en una sola línea */
+    flex: 1;
     max-width: none;
   }
 }
 
-/* Ajuste para móviles (Teléfonos) */
+/* Ajuste móvil por defecto (para vistas con pocos botones) */
 @media (max-width: 480px) {
   .admin-nav-actions {
+    display: flex;
     flex-direction: column;
+    align-items: center;
   }
-  .admin-nav-actions button {
-    flex: 1 1 100%;
-    max-width: 100%;
+}
+
+/* 👇 CUADRÍCULA 2X2 ESTRICTA SÓLO CUANDO ESTÁ ACTIVA LA CLASE MANAGING */
+@media (max-width: 480px) {
+  .admin-nav-actions.managing-active {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .admin-nav-actions.managing-active button:not([style*="display: none"]) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0.8rem 0.2rem !important;
+    font-size: 0.95rem !important;
+    text-align: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
   }
 }
 

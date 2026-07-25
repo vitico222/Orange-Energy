@@ -144,17 +144,28 @@ function updateAdminNavButtons(view) {
     if (btn) btn.style.display = "none";
   });
 
-  // Mostrar según vista
+  // 👇 NUEVO: Buscamos el contenedor de los botones de navegación
+  const navActionsContainer = document.querySelector(".admin-nav-actions");
+
+  // Mostrar según vista y actualizar la clase del contenedor
   if (view === "list") {
     btnBackLogin.style.display = "block";
+    if (navActionsContainer)
+      navActionsContainer.classList.remove("managing-active");
   } else if (view === "manage") {
     btnBackLogin.style.display = "block";
     btnClose.style.display = "block";
     btnReset.style.display = "block";
-    btnDelete.style.display = "block"; // Asegura que se muestre aquí
+    btnDelete.style.display = "block";
+
+    // 👇 NUEVO: Activamos la clase especial solo en la vista de gestión
+    if (navActionsContainer)
+      navActionsContainer.classList.add("managing-active");
   } else if (view === "board") {
     btnBackLogin.style.display = "block";
     btnClose.style.display = "block";
+    if (navActionsContainer)
+      navActionsContainer.classList.remove("managing-active");
   }
 }
 
