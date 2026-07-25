@@ -168,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 // ====================== RENDER BOARD ======================
-// ====================== RENDER BOARD ======================
 function renderBoard(progress = {}, containerId = "game-board") {
   const board =
     document.getElementById(containerId) ||
@@ -185,23 +184,20 @@ function renderBoard(progress = {}, containerId = "game-board") {
 
     // LÓGICA DE STICKERS
     if (progress[i]) {
-      // Si la casilla está desbloqueada, cargamos su sticker respectivo
-      // Asumiendo que están en una carpeta llamada "stickers" con nombre "sticker_X.png"
       casilla.innerHTML = `<img src="assets/stickers/sticker_${i}.png" alt="Sticker ${i}" style="width: 80%; height: 80%; object-fit: contain; pointer-events: none;" />`;
     } else {
-      // Si está bloqueada, muestra el número de la casilla
       casilla.innerHTML = `<span>${i}</span>`;
     }
 
-    casilla.addEventListener("click", () => showCasillaModal(i));
+    // Al hacer clic, pasamos el estado de desbloqueo real de esta casilla específica
+    const isUnlocked = !!progress[i];
+    casilla.addEventListener("click", () => showCasillaModal(i, isUnlocked));
     board.appendChild(casilla);
   }
 }
 
-// ====================== MODAL ======================
-// ====================== MODAL ======================
-// ====================== MODAL CON EFECTO DE CONFETÍ ======================
-function showCasillaModal(num) {
+// ====================== MODAL CON EFECTO DE CONFETÍ CONDICIONAL ======================
+function showCasillaModal(num, isUnlocked = false) {
   const modal = document.getElementById("casilla-modal");
   if (!modal) return;
 
@@ -238,44 +234,48 @@ function showCasillaModal(num) {
   // Mostramos el modal primero
   modal.style.display = "flex";
 
-  // RETRASO DE 1 SEGUNDO ANTES DE LA EXPLOSIÓN
-  setTimeout(() => {
-    // Verificamos que el modal siga abierto antes de lanzar el confetí
-    if (modal.style.display === "flex") {
-      // CONFIGURACIÓN DE LA DURACIÓN (3 Segundos)
-      const duration = 3 * 1000;
-      const animationEnd = Date.now() + duration;
-      const defaults = {
-        startVelocity: 30,
-        spread: 360,
-        ticks: 60,
-        zIndex: 99999,
-      };
+  // 🎉 EL CONFETÍ SOLO SE DISPARA SI EL STICKER ESTÁ DESBLOQUEADO (GANADO)
+  if (isUnlocked) {
+    setTimeout(() => {
+      // Verificamos que el modal siga abierto antes de lanzar el confetí
+      if (modal.style.display === "flex") {
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = {
+          startVelocity: 30,
+          spread: 360,
+          ticks: 60,
+          zIndex: 99999,
+        };
 
-      function randomInRange(min, max) {
-        return Math.random() * (max - min) + min;
-      }
-
-      const interval = setInterval(function () {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min;
         }
 
-        const particleCount = 50 * (timeLeft / duration);
+        const interval = setInterval(function () {
+          const timeLeft = animationEnd - Date.now();
 
-        // Lanzamos confetí desde el centro de la pantalla (donde está el modal)
-        confetti(
-          Object.assign({}, defaults, {
-            particleCount,
-            origin: { x: randomInRange(0.4, 0.6), y: randomInRange(0.4, 0.6) },
-            colors: ["#fe5c14", "#079cff", "#ffd700", "#ffffff"], // Colores alineados a tu temática
-          }),
-        );
-      }, 250);
-    }
-  }, 1000); // 1000 milisegundos = 1 segundo de retardo
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+
+          // Lanzamos confetí desde el centro de la pantalla
+          confetti(
+            Object.assign({}, defaults, {
+              particleCount,
+              origin: {
+                x: randomInRange(0.4, 0.6),
+                y: randomInRange(0.4, 0.6),
+              },
+              colors: ["#fe5c14", "#079cff", "#ffd700", "#ffffff"],
+            }),
+          );
+        }, 250);
+      }
+    }, 1000); // 1 segundo de retraso
+  }
 }
 
 // ====================== ADMIN PANEL FUNCTIONS ======================
@@ -296,7 +296,6 @@ window.adminEditStudent = function (key) {
   title.style =
     "display: inline-block; color: var(--orange); font-size: 1.8rem; margin: 0;";
 
-  // Modificado para mostrar la modalidad formateada
   const formattedModality = formatModalityName(student.modality);
   title.innerHTML = `Managing: ${sanitizeInput(student.name)} (${formattedModality})`;
 
@@ -381,25 +380,17 @@ window.executeReset = function () {
   }
 };
 
-//Botón delete ----------
-
 window.deleteStudentProfile = function () {
   if (currentEditingStudentKey && users[currentEditingStudentKey]) {
     const studentName = users[currentEditingStudentKey].name;
 
-    // Ventana de confirmación
     if (
       confirm(
         `WARNING: Are you sure you want to permanently DELETE the profile for ${studentName}? This action cannot be undone.`,
       )
     ) {
-      // Borramos el usuario del objeto local
       delete users[currentEditingStudentKey];
-
-      // Sincronizamos con Firebase
       window.saveUsers();
-
-      // Volvemos a la lista principal
       currentEditingStudentKey = null;
       window.showAdminPanel();
     }
@@ -457,7 +448,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
       name: users[key].name,
       key,
       progress: users[key].progress || {},
-      modality: users[key].modality || "in-person", // <--- Aquí cargamos la modalidad guardada
+      modality: users[key].modality || "in-person",
     };
     showBoard();
   } else {
@@ -465,7 +456,6 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   }
 });
 
-// Variable de control para saber si el último modal mostrado fue el de éxito
 let isSuccessModal = false;
 
 document.getElementById("signup-form").addEventListener("submit", (e) => {
@@ -481,7 +471,6 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   const modalTitle = document.getElementById("modal-title");
   const modalDesc = document.getElementById("modal-description");
 
-  // Función interna para mostrar tu propio diálogo personalizado
   function showSignupAlert(title, message, success = false) {
     if (!modal) return;
     modalTitle.textContent = title;
@@ -490,14 +479,12 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
     isSuccessModal = success;
   }
 
-  // 1. VALIDACIÓN DE NOMBRE
   if (!name) {
     showSignupAlert("Incomplete Data", "Please enter a student name.");
     if (nameInput) nameInput.focus();
     return;
   }
 
-  // 2. VALIDACIÓN DE PIN
   if (!pin) {
     showSignupAlert("Incomplete Data", "Please enter a 4-digit PIN.");
     if (pinInput) pinInput.focus();
@@ -510,7 +497,6 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
     return;
   }
 
-  // 3. VALIDACIÓN DE MODALIDAD
   if (!selectedModality) {
     showSignupAlert(
       "Modality Required",
@@ -525,7 +511,6 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
     return;
   }
 
-  // GUARDADO CON MODALIDAD
   users[key] = {
     name: name,
     progress: {},
@@ -533,15 +518,11 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
   };
 
   window.saveUsers();
-
-  // MENSAJE DE ÉXITO CON TU PROPIO MODAL (marcado como true)
   showSignupAlert("Success!", "Account created successfully!", true);
 
-  // Limpiar selección y formulario
   selectedModality = null;
   document.getElementById("signup-form").reset();
 
-  // Resetear colores visuales de los botones de modalidad
   document
     .querySelectorAll(".mod-btn")
     .forEach((btn) => (btn.style.backgroundColor = "#767676"));
@@ -555,9 +536,7 @@ function showBoard() {
   document.getElementById("student-name-display").textContent =
     currentUser.name;
 
-  // CARGAMOS EL SYLLABUS CORRESPONDIENTE A SU MODALIDAD
   loadStudentSyllabus(currentUser.modality);
-
   renderBoard(currentUser.progress);
 }
 
@@ -576,7 +555,6 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 });
 
 // ====================== ADMIN MAIN VIEW ======================
-// ====================== ADMIN MAIN VIEW ======================
 window.showAdminPanel = function () {
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
@@ -585,7 +563,6 @@ window.showAdminPanel = function () {
     .forEach((s) => s.classList.remove("active"));
   document.getElementById("admin-screen").classList.add("active");
 
-  // Limpiar filtros al entrar
   const searchInput = document.getElementById("search-students");
   const modalitySelect = document.getElementById("filter-modality");
   if (searchInput) searchInput.value = "";
@@ -594,14 +571,12 @@ window.showAdminPanel = function () {
   window.renderStudentsList();
 };
 
-// Función auxiliar para disparar el filtrado combinando texto y modalidad
 function triggerFilter() {
   const text = document.getElementById("search-students")?.value || "";
   const modality = document.getElementById("filter-modality")?.value || "";
   window.renderStudentsList(text, modality);
 }
 
-// Vincular los eventos de los filtros una sola vez de forma segura
 document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search-students");
   const modalitySelect = document.getElementById("filter-modality");
@@ -682,24 +657,20 @@ document
   .getElementById("search-students")
   .addEventListener("input", (e) => window.renderStudentsList(e.target.value));
 
-// Abrir el modal
 document.getElementById("admin-btn").addEventListener("click", () => {
   document.getElementById("admin-login-modal").style.display = "flex";
 });
 
-// Cerrar el modal (Cancelar)
 document.getElementById("admin-login-cancel").addEventListener("click", () => {
   document.getElementById("admin-login-modal").style.display = "none";
 });
 
-// Lógica de validación dentro del modal
 document.getElementById("admin-login-submit").addEventListener("click", () => {
   const name = document.getElementById("admin-user-input").value;
   const pin = document.getElementById("admin-pin-input").value;
 
   if (name === ADMIN_USER && pin === ADMIN_PIN) {
     document.getElementById("admin-login-modal").style.display = "none";
-    // Limpiar inputs
     document.getElementById("admin-user-input").value = "";
     document.getElementById("admin-pin-input").value = "";
     window.showAdminPanel();
@@ -708,7 +679,6 @@ document.getElementById("admin-login-submit").addEventListener("click", () => {
   }
 });
 
-// --- Lógica para permitir presionar ENTER ---
 const adminUserInput = document.getElementById("admin-user-input");
 const adminPinInput = document.getElementById("admin-pin-input");
 const loginSubmitBtn = document.getElementById("admin-login-submit");
@@ -741,26 +711,22 @@ document.getElementById("admin-back-btn").addEventListener("click", () => {
 document.getElementById("close-modal").addEventListener("click", () => {
   document.getElementById("casilla-modal").style.display = "none";
 
-  // Si el modal que acabamos de cerrar era el de éxito, regresamos al login
   if (isSuccessModal) {
     isSuccessModal = false;
     document.getElementById("back-to-login").click();
   }
 });
 
-// --- LOGICA DE SELECCION DE MODALIDAD ---
 let selectedModality = null;
 
 window.selectModality = function (modality, btnElement) {
   selectedModality = modality;
 
-  // Resetear color de todos los botones de modalidad
   document.querySelectorAll(".mod-btn").forEach((btn) => {
-    btn.style.backgroundColor = "#767676"; // Color original
+    btn.style.backgroundColor = "#767676";
   });
 
-  // Cambiar color del botón seleccionado
-  btnElement.style.backgroundColor = "#fe5c14"; // Color naranja primario
+  btnElement.style.backgroundColor = "#fe5c14";
 };
 
 // ====================== INIT ======================
