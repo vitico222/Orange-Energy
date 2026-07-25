@@ -499,14 +499,14 @@ footer {
   }
 
   .modal-sticker-container {
-    width: 100px;
-    height: 100px;
+    width: 130px;
+    height: 130px;
     border-width: 3px;
   }
 
   .modal-sticker-img {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
   }
 
   #modal-title {
