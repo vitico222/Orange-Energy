@@ -5,6 +5,7 @@ const ADMIN_PIN = "2026";
 import { syllabusInPerson } from "./syllabus-in-person.js";
 import { syllabusOnline } from "./syllabus-online.js";
 import { syllabusKids } from "./syllabus-kids.js";
+import { termsContent } from "./syllabus-terms.js";
 
 // Objeto contenedor que centraliza los tres syllabus
 const syllabiCollection = {
@@ -178,7 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 // ====================== RENDER BOARD ======================
+
 function renderBoard(progress = {}, containerId = "game-board") {
   const board =
     document.getElementById(containerId) ||
@@ -204,6 +207,38 @@ function renderBoard(progress = {}, containerId = "game-board") {
     const isUnlocked = !!progress[i];
     casilla.addEventListener("click", () => showCasillaModal(i, isUnlocked));
     board.appendChild(casilla);
+  }
+
+  // 👇 CREAR Y AÑADIR DINÁMICAMENTE EL BOTÓN TERMS AND CONDITIONS AL FINAL DEL BOARD
+  const boardContainer =
+    board.closest(".board-container") || board.parentElement;
+  if (boardContainer) {
+    // Evitamos duplicados si renderBoard se ejecuta varias veces
+    let termsWrapper =
+      boardContainer.parentNode.querySelector(".terms-wrapper");
+    if (!termsWrapper) {
+      termsWrapper = document.createElement("div");
+      termsWrapper.className = "terms-wrapper";
+      termsWrapper.style = "margin: 1.5rem 0; text-align: center;";
+
+      const termsBtn = document.createElement("button");
+      termsBtn.id = "terms-btn";
+      termsBtn.className = "terms-btn";
+      termsBtn.textContent = "Terms and Conditions";
+
+      termsBtn.addEventListener("click", () => {
+        document.getElementById("modal-title").textContent = termsContent.title;
+        document.getElementById("modal-description").textContent =
+          termsContent.description;
+        document.getElementById("casilla-modal").style.display = "flex";
+      });
+
+      termsWrapper.appendChild(termsBtn);
+      boardContainer.parentNode.insertBefore(
+        termsWrapper,
+        boardContainer.nextSibling,
+      );
+    }
   }
 }
 
@@ -639,7 +674,7 @@ window.renderStudentsList = function (
       ? formatModalityName(selectedModalityFilter)
       : "All Modalities";
     statsHtml += `
-      <span style="font-size: 1.1rem; color: #555555;">
+      <span style="font-size: 1.1rem; font-weight: bold; color: #555555;">
         (${activeModalityText}): <strong style="color: var(--orange);">${matchCount}</strong>
       </span>
     `;

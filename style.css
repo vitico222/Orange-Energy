@@ -560,3 +560,25 @@ footer {
   flex-direction: column;
   align-items: center;
 }
+
+/* ==================== BOTÓN TERMS AND CONDITIONS ==================== */
+.terms-btn {
+  font-family: "Sarina", cursive !important;
+  background-color: var(--orange) !important;
+  color: white !important;
+  border: 2px solid #b9b9b9 !important;
+  /*padding: 0.8rem 1.8rem !important;*/
+  border-radius: 12px !important;
+  font-size: 1.2rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(255, 98, 0, 0.4) !important;
+  transition: all 0.3s ease !important;
+  width: auto !important;
+  display: inline-block !important;
+}
+
+.terms-btn:hover {
+  transform: scale(1.05) !important;
+  background-color: #e05500 !important;
+  box-shadow: 0 6px 20px rgba(255, 98, 0, 0.6) !important;
+}
