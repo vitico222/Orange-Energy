@@ -516,6 +516,7 @@ footer {
   color: #dddddd;
   margin: 0;
   line-height: 1.4;
+  white-space: pre-line !important;
 }
 
 /* Adaptabilidad perfecta para Smartphones */
