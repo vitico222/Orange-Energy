@@ -36,13 +36,34 @@
               placeholder="Username"
               required
             />
-            <input
-              type="password"
-              id="login-pin"
-              maxlength="4"
-              placeholder="Password (four digits)"
-              required
-            />
+            <div
+              style="
+                position: relative;
+                display: flex;
+                align-items: center;
+                margin-bottom: 1rem;
+              "
+            >
+              <input
+                type="password"
+                id="login-pin"
+                maxlength="4"
+                placeholder="Password (four digits)"
+                required
+                style="width: 100%; padding-right: 40px; margin-bottom: 0"
+              />
+              <span
+                onclick="togglePasswordVisibility('login-pin', this)"
+                style="
+                  position: absolute;
+                  right: 12px;
+                  cursor: pointer;
+                  user-select: none;
+                  font-size: 1.2rem;
+                "
+                >👁️</span
+              >
+            </div>
             <button type="submit">Login</button>
           </form>
           <button id="signup-btn" class="secondary-btn">Sign Up</button>
@@ -61,12 +82,34 @@
               placeholder="Username"
               required
             />
-            <input
-              type="password"
-              id="signup-pin"
-              placeholder="Password (Four digits)"
-              required
-            />
+            <div
+              style="
+                position: relative;
+                display: flex;
+                align-items: center;
+                margin-bottom: 1rem;
+              "
+            >
+              <input
+                type="password"
+                id="signup-pin"
+                maxlength="4"
+                placeholder="Password (Four digits)"
+                required
+                style="width: 100%; padding-right: 40px; margin-bottom: 0"
+              />
+              <span
+                onclick="togglePasswordVisibility('signup-pin', this)"
+                style="
+                  position: absolute;
+                  right: 12px;
+                  cursor: pointer;
+                  user-select: none;
+                  font-size: 1.2rem;
+                "
+                >👁️</span
+              >
+            </div>
 
             <!-- NUEVOS BOTONES DE MODALIDAD -->
             <div

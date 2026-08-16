@@ -818,5 +818,18 @@ window.selectModality = function (modality, btnElement) {
   btnElement.style.backgroundColor = "#fe5c14";
 };
 
+window.togglePasswordVisibility = function (inputId, iconElement) {
+  const inputField = document.getElementById(inputId);
+  if (!inputField) return;
+
+  if (inputField.type === "password") {
+    inputField.type = "text";
+    iconElement.textContent = "👁️‍🗨️";
+  } else {
+    inputField.type = "password";
+    iconElement.textContent = "👁️";
+  }
+};
+
 // ====================== INIT ======================
 document.getElementById("login-screen").classList.add("active");
