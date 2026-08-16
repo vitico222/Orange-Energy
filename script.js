@@ -1,6 +1,6 @@
 // ====================== CONFIG ======================
 const ADMIN_USER = "Iflidiomas";
-const ADMIN_PIN = "2026";
+const ADMIN_PIN_BASE64 = "MjAyNg==";
 
 import { syllabusInPerson } from "./syllabus-in-person.js";
 import { syllabusOnline } from "./syllabus-online.js";
@@ -757,7 +757,8 @@ document.getElementById("admin-login-submit").addEventListener("click", () => {
   const name = document.getElementById("admin-user-input").value;
   const pin = document.getElementById("admin-pin-input").value;
 
-  if (name === ADMIN_USER && pin === ADMIN_PIN) {
+  // Comparamos el nombre y decodificamos el PIN al vuelo para comparar
+  if (name === ADMIN_USER && pin === atob(ADMIN_PIN_BASE64)) {
     document.getElementById("admin-login-modal").style.display = "none";
     document.getElementById("admin-user-input").value = "";
     document.getElementById("admin-pin-input").value = "";
