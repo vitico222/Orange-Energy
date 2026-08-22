@@ -29,6 +29,25 @@ function loadStudentSyllabus(modality) {
   }
 }
 
+// ====================== AUDIO EFFECTS ======================
+const audioYouRock = new Audio("assets/sounds/you_rock.mp3");
+const audioYouDidIt = new Audio("assets/sounds/you_did_it.mp3");
+
+function playLevelSound(num) {
+  try {
+    const sound = num % 3 === 0 ? audioYouDidIt : audioYouRock;
+    sound.currentTime = 0; // Reinicia el audio si ya se estaba reproduciendo
+    sound.play().catch((error) => {
+      console.log(
+        "Autoplay de audio bloqueado por políticas del navegador:",
+        error,
+      );
+    });
+  } catch (e) {
+    console.error("Error al reproducir el efecto de sonido:", e);
+  }
+}
+
 // ====================== INTEGRACIÓN DE FIREBASE ======================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
@@ -226,7 +245,7 @@ function renderBoard(progress = {}, containerId = "game-board") {
   }
 }
 
-// ====================== MODAL CON EFECTO DE CONFETÍ ======================
+// ====================== MODAL CON EFECTO DE CONFETÍ Y SONIDO ======================
 function showCasillaModal(num, isUnlocked = false) {
   const modal = document.getElementById("casilla-modal");
   if (!modal) return;
@@ -262,45 +281,49 @@ function showCasillaModal(num, isUnlocked = false) {
 
   modal.style.display = "flex";
 
-  // Confetí seguro (verifica si la librería está disponible)
-  if (isUnlocked && typeof confetti === "function") {
-    setTimeout(() => {
-      if (modal.style.display === "flex") {
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-        const defaults = {
-          startVelocity: 30,
-          spread: 360,
-          ticks: 60,
-          zIndex: 99999,
-        };
+  // Efectos de sonido y confetí al abrir casilla desbloqueada
+  if (isUnlocked) {
+    playLevelSound(num);
 
-        function randomInRange(min, max) {
-          return Math.random() * (max - min) + min;
-        }
+    if (typeof confetti === "function") {
+      setTimeout(() => {
+        if (modal.style.display === "flex") {
+          const duration = 3 * 1000;
+          const animationEnd = Date.now() + duration;
+          const defaults = {
+            startVelocity: 30,
+            spread: 360,
+            ticks: 60,
+            zIndex: 99999,
+          };
 
-        const interval = setInterval(function () {
-          const timeLeft = animationEnd - Date.now();
-
-          if (timeLeft <= 0) {
-            return clearInterval(interval);
+          function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
           }
 
-          const particleCount = 50 * (timeLeft / duration);
+          const interval = setInterval(function () {
+            const timeLeft = animationEnd - Date.now();
 
-          confetti(
-            Object.assign({}, defaults, {
-              particleCount,
-              origin: {
-                x: randomInRange(0.4, 0.6),
-                y: randomInRange(0.4, 0.6),
-              },
-              colors: ["#fe5c14", "#079cff", "#ffd700", "#ffffff"],
-            }),
-          );
-        }, 250);
-      }
-    }, 1000);
+            if (timeLeft <= 0) {
+              return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+
+            confetti(
+              Object.assign({}, defaults, {
+                particleCount,
+                origin: {
+                  x: randomInRange(0.4, 0.6),
+                  y: randomInRange(0.4, 0.6),
+                },
+                colors: ["#fe5c14", "#079cff", "#ffd700", "#ffffff"],
+              }),
+            );
+          }, 250);
+        }
+      }, 300);
+    }
   }
 }
 
