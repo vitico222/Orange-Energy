@@ -446,7 +446,7 @@ footer {
   transition: background 0.3s;
 }
 
-/* ==================== MODAL DE STICKERS / CHALLENGES ==================== */
+/* ==================== MODAL DE STICKERS / CHALLENGES / TERMS ==================== */
 .modal-content {
   background: #222;
   padding: 2.5rem 2rem;
@@ -461,6 +461,30 @@ footer {
   align-items: center;
   gap: 15px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+
+  /* NUEVO: Control de altura y scroll */
+  max-height: 85vh; /* Evita que crezca más del 85% de la pantalla */
+  overflow-y: auto; /* Crea el scroll automático si el texto se desborda */
+}
+
+/* NUEVO: Estilo personalizado para el scrollbar (Estilo Orange Energy) */
+.modal-content::-webkit-scrollbar {
+  width: 8px; /* Grosor de la barra */
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05); /* Fondo sutil del carril */
+  border-radius: 10px;
+  margin: 10px 0; /* Margen para que no pegue de los bordes del modal */
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--orange); /* Color de la barra deslizante */
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #e05500; /* Naranja un poco más oscuro al pasar el mouse */
 }
 
 /* Contenedor circular elegante para el Sticker */
