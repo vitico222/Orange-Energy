@@ -679,7 +679,7 @@ header {
 @media (max-width: 768px) {
   .lang-cintillo {
     flex-direction: column; /* Apila las banderas verticalmente */
-    right: 10px; /* Un poco más pegadas al borde en celular */
+    right: 20px; /* Un poco más pegadas al borde en celular */
     gap: 8px;
   }
 
