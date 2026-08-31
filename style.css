@@ -607,3 +607,86 @@ footer {
   background-color: #e05500 !important;
   box-shadow: 0 6px 20px rgba(255, 98, 0, 0.6) !important;
 }
+
+/* Contenedor del cintillo flotante */
+header {
+  position: relative;
+}
+
+.lang-cintillo {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%); /* Esto es lo que lo centra verticalmente */
+  right: 20px; /* Alineado a la derecha */
+  display: flex;
+  flex-direction: row; /* Horizontal en PC */
+  gap: 10px;
+  z-index: 1000;
+}
+
+/* Botón base para la bandera 3D */
+.lang-flag {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #b0b0b0; /* Borde gris claro visible en todas */
+  margin: 0 !important;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s ease-in-out;
+
+  /* Sombra para el relieve 3D */
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.25),
+    0 8px 10px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5);
+
+  overflow: hidden;
+  filter: grayscale(65%); /* Apagado cuando no está activo */
+}
+
+.lang-flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Hover: Crece un poco sin subir, manteniendo su borde gris */
+.lang-flag:hover {
+  transform: scale(1.1);
+  filter: grayscale(20%);
+  box-shadow:
+    0 8px 12px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+/* Estado activo y selección: El borde cambia a naranja */
+.lang-flag:active,
+.lang-flag.active {
+  transform: scale(1.05);
+  border-color: white; /* Borde del seleccionado */
+  filter: grayscale(0%); /* Color completo */
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.3),
+    0 0 8px rgba(254, 92, 20, 0.4); /* Sutil brillo naranja */
+}
+
+/* =========================================
+   DISEÑO PARA MÓVILES (Menos de 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  .lang-cintillo {
+    flex-direction: column; /* Apila las banderas verticalmente */
+    right: 10px; /* Un poco más pegadas al borde en celular */
+    gap: 8px;
+  }
+
+  /* Banderas más pequeñas en celular */
+  .lang-flag {
+    width: 25px;
+    height: 25px;
+    border-width: 2px; /* Borde ligeramente más fino para ajustarse al tamaño */
+  }
+}

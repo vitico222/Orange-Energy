@@ -137,6 +137,29 @@ window.saveUsers = function () {
     );
 };
 
+// ====================== LANGUAGE SELECTOR ======================
+export let currentLang = localStorage.getItem("app_lang") || "en";
+
+window.setLanguage = function (lang) {
+  currentLang = lang;
+  localStorage.setItem("app_lang", lang);
+
+  // Actualiza la clase 'active' en la bandera seleccionada
+  document.querySelectorAll(".lang-flag").forEach((btn) => {
+    btn.classList.remove("active");
+  });
+
+  const selectedBtn = document.getElementById(`lang-${lang}`);
+  if (selectedBtn) {
+    selectedBtn.classList.add("active");
+  }
+
+  console.log(`Idioma activado: ${lang}`);
+
+  // Próximamente llamaremos aquí a la función de traducción
+  // updateAppLanguage(lang);
+};
+
 // ====================== HELPER FUNCTIONS ======================
 
 function formatModalityName(modality) {
