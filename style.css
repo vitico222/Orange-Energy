@@ -665,7 +665,7 @@ header {
 /* Estado activo y selección: El borde cambia a naranja */
 .lang-flag:active,
 .lang-flag.active {
-  transform: scale(1.05);
+  transform: scale(1.1);
   border-color: white; /* Borde del seleccionado */
   filter: grayscale(0%); /* Color completo */
   box-shadow:
