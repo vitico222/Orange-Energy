@@ -1,0 +1,19 @@
+{
+  "database": {
+    "rules": {
+      "admins": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && root.child('admins/' + auth.uid).exists()"
+        }
+      },
+      "users": {
+        ".read": true,
+        "$key": {
+          ".write": "auth != null && root.child('admins/' + auth.uid).exists() || !data.exists()",
+          ".validate": "newData.val() === null || (newData.hasChildren(['name','modality','progress']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 100 && (newData.child('modality').val() === 'in-person' || newData.child('modality').val() === 'online' || newData.child('modality').val() === 'kids'))"
+        }
+      }
+    }
+  }
+}

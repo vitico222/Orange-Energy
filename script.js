@@ -1,23 +1,61 @@
-// ====================== CONFIG ======================
-const ADMIN_USER = "Iflidiomas";
-const ADMIN_PIN_BASE64 = "MjAyNg==";
-
+// ====================== SYLLABUS ======================
 import { syllabusInPerson } from "./syllabus-in-person.js";
 import { syllabusOnline } from "./syllabus-online.js";
 import { syllabusKids } from "./syllabus-kids.js";
 import { termsContent } from "./syllabus-terms.js";
 
-// Objeto contenedor que centraliza los tres syllabus
+// ====================== FIREBASE (APP + DATABASE + AUTH) ======================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  get,
+  child,
+  update,
+  remove,
+  onValue,
+  forceLongPolling,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCbie2kCYWIlox7Cvs_MYf9HU4JPrCXgFI",
+  authDomain: "orange-energy-42100.firebaseapp.com",
+  databaseURL: "https://orange-energy-42100-default-rtdb.firebaseio.com",
+  projectId: "orange-energy-42100",
+  storageBucket: "orange-energy-42100.firebasestorage.app",
+  messagingSenderId: "151551658032",
+  appId: "1:151551658032:web:0a3a7a6346614f0f69c5f5",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+// Modo HTTP Long-Polling oficial (reemplaza el hack de internals privados del SDK)
+forceLongPolling(db);
+
+// ====================== CONFIG / CONSTANTES ======================
+const VALID_MODALITIES = ["in-person", "online", "kids"];
+const MAX_NAME_LENGTH = 40;
+const PIN_LENGTH = 4;
+const KEY_PEPPER = "orange-energy-ifl-key-v1";
+
 const syllabiCollection = {
   "in-person": syllabusInPerson,
   online: syllabusOnline,
   kids: syllabusKids,
 };
 
-// Variable global activa para las descripciones de las casillas
+// Descripciones activas de las casillas según la modalidad
 export let casillaDescriptions = {};
 
-// Función auxiliar para cargar dinámicamente el syllabus según la modalidad
 function loadStudentSyllabus(modality) {
   const selectedSyllabus = syllabiCollection[modality] || syllabusInPerson; // Fallback por defecto
 
@@ -27,6 +65,48 @@ function loadStudentSyllabus(modality) {
       desc: `Complete the assigned task for level ${Math.ceil(i / 5)}`,
     };
   }
+}
+
+// ====================== NORMALIZACIÓN DE DATOS ======================
+function normalizeName(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function normalizeModality(modality) {
+  return VALID_MODALITIES.includes(modality) ? modality : "in-person";
+}
+
+function normalizeProgress(progress) {
+  const clean = {};
+  if (progress && typeof progress === "object") {
+    for (let i = 1; i <= 30; i++) {
+      if (progress[i]) clean[i] = true;
+    }
+  }
+  return clean;
+}
+
+// PIN: exactamente 4 caracteres y sin espacios (las letras están permitidas)
+function isValidPin(pin) {
+  return typeof pin === "string" && new RegExp(`^\\S{${PIN_LENGTH}}$`).test(pin);
+}
+
+// ====================== DERIVACIÓN DE CLAVE (el PIN nunca se guarda) ======================
+async function sha256Hex(text) {
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Dirección (key) del alumno: hash del nombre+PIN. Solo quien conoce ambos puede calcularla.
+async function deriveStudentKey(name, pin) {
+  const identity = `${normalizeName(name)}:${String(pin).trim()}:${KEY_PEPPER}`;
+  return sha256Hex(identity);
 }
 
 // ====================== AUDIO EFFECTS ======================
@@ -48,94 +128,67 @@ function playLevelSound(num) {
   }
 }
 
-// ====================== INTEGRACIÓN DE FIREBASE ======================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  set,
-  onValue,
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCbie2kCYWIlox7Cvs_MYf9HU4JPrCXgFI",
-  authDomain: "orange-energy-42100.firebaseapp.com",
-  databaseURL: "https://orange-energy-42100-default-rtdb.firebaseio.com",
-  projectId: "orange-energy-42100",
-  storageBucket: "orange-energy-42100.firebasestorage.app",
-  messagingSenderId: "151551658032",
-  appId: "1:151551658032:web:0a3a7a6346614f0f69c5f5",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// FORZAR el uso de Long-Polling si el WebSocket falla (protección con optional chaining)
-if (db?._repo?.persistentConnection_) {
-  db._repo.persistentConnection_.forceLongPolling_ = true;
-}
-
-setTimeout(() => {
-  if (db?._repo?.persistentConnection_) {
-    db._repo.persistentConnection_.forceLongPolling_ = true;
-    console.log("Firebase forzado a modo HTTP Long-Polling.");
-  }
-}, 1000);
-
-// ====================== GLOBAL VARIABLES ======================
-let currentUser = null;
+// ====================== ESTADO GLOBAL ======================
+let currentUser = null; // Alumno con sesión activa
+let isAdmin = false; // Sesión admin autenticada y autorizada
+let users = {}; // Snapshot de alumnos (solo cargado para el admin)
 let currentEditingStudentKey = null;
-let currentAdminView = "list"; // Mantiene constancia de en qué vista del panel estamos
-let users = {};
+let currentAdminView = "list"; // Vista actual del panel admin
+let isSuccessModal = false;
+let selectedModality = null;
+
+let studentProgressUnsubscribe = null;
+let adminUsersUnsubscribe = null;
 
 const usersRef = ref(db, "users");
 
-// Escucha activa de cambios en tiempo real adaptada al flujo de vistas
-onValue(usersRef, (snapshot) => {
-  const data = snapshot.val();
-  if (data) {
-    users = data;
-    console.log("Datos cargados correctamente");
-  } else {
-    console.warn(
-      "Firebase devolvió datos vacíos, no sobrescribiremos la variable local.",
-    );
-  }
+// ====================== SUSCRIPCIONES EN TIEMPO REAL ======================
+// El alumno escucha SOLO su propio nodo (no la lista completa).
+function subscribeStudentProgress() {
+  if (!currentUser || !currentUser.key) return;
+  if (studentProgressUnsubscribe) studentProgressUnsubscribe();
 
-  const adminScreen = document.getElementById("admin-screen");
-  if (adminScreen && adminScreen.classList.contains("active")) {
-    if (currentAdminView === "list") {
-      const searchInput = document.getElementById("search-students");
-      const modalitySelect = document.getElementById("filter-modality");
-      window.renderStudentsList(
-        searchInput ? searchInput.value : "",
-        modalitySelect ? modalitySelect.value : "",
-      );
-    } else if (currentAdminView === "manage" && currentEditingStudentKey) {
-      window.adminEditStudent(currentEditingStudentKey);
-    } else if (currentAdminView === "board" && currentEditingStudentKey) {
-      window.viewStudentBoard(currentEditingStudentKey);
-    }
-  }
+  studentProgressUnsubscribe = onValue(
+    child(usersRef, currentUser.key),
+    (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+      currentUser.name = data.name || currentUser.name;
+      currentUser.modality = normalizeModality(data.modality);
+      currentUser.progress = normalizeProgress(data.progress);
+      renderBoard(currentUser.progress);
+    },
+    (err) => console.error("Error al leer el progreso:", err),
+  );
+}
 
-  if (currentUser && users[currentUser.key]) {
-    currentUser.progress = users[currentUser.key].progress || {};
-    const boardView = document.getElementById("student-board-view");
-    if (boardView) {
-      renderBoard(currentUser.progress, "student-board-view");
-    } else {
-      renderBoard(currentUser.progress, "game-board");
-    }
-  }
-});
+// El admin escucha la lista completa (protegida por reglas).
+function subscribeAdminUsers() {
+  if (adminUsersUnsubscribe) adminUsersUnsubscribe();
 
-window.saveUsers = function () {
-  set(usersRef, users)
-    .then(() => console.log("¡Datos sincronizados con Firebase con éxito!"))
-    .catch((error) =>
-      console.error("Error crítico al guardar en Firebase:", error),
-    );
-};
+  adminUsersUnsubscribe = onValue(
+    usersRef,
+    (snapshot) => {
+      users = snapshot.val() || {};
+      const adminScreen = document.getElementById("admin-screen");
+      if (adminScreen && adminScreen.classList.contains("active")) {
+        if (currentAdminView === "list") {
+          const searchInput = document.getElementById("search-students");
+          const modalitySelect = document.getElementById("filter-modality");
+          window.renderStudentsList(
+            searchInput ? searchInput.value : "",
+            modalitySelect ? modalitySelect.value : "",
+          );
+        } else if (currentAdminView === "manage" && currentEditingStudentKey) {
+          window.adminEditStudent(currentEditingStudentKey);
+        } else if (currentAdminView === "board" && currentEditingStudentKey) {
+          window.viewStudentBoard(currentEditingStudentKey);
+        }
+      }
+    },
+    (err) => console.error("Error al leer la lista de alumnos:", err),
+  );
+}
 
 // ====================== LANGUAGE SELECTOR ======================
 export let currentLang = localStorage.getItem("app_lang") || "en";
@@ -155,9 +208,6 @@ window.setLanguage = function (lang) {
   }
 
   console.log(`Idioma activado: ${lang}`);
-
-  // Próximamente llamaremos aquí a la función de traducción
-  // updateAppLanguage(lang);
 };
 
 // ====================== HELPER FUNCTIONS ======================
@@ -374,12 +424,15 @@ window.adminEditStudent = function (key) {
   titleContainer.appendChild(title);
   container.appendChild(titleContainer);
 
+  const progress = normalizeProgress(student.progress);
+  const unlockedCount = Object.keys(progress).length;
+
   const statsDiv = document.createElement("div");
   statsDiv.style =
     "display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 16px 20px; border: 1px solid #898989; border-radius: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; color: #000000;";
   statsDiv.innerHTML = `
     <span style="font-size: 2rem; font-weight: bold; color: #000000;">
-      Progress: <strong>${Object.keys(student.progress || {}).length} / 30</strong>
+      Progress: <strong>${unlockedCount} / 30</strong>
     </span>
   `;
 
@@ -396,7 +449,7 @@ window.adminEditStudent = function (key) {
   manageList.id = "manage-list";
 
   for (let i = 1; i <= 30; i++) {
-    const unlocked = !!(student.progress && student.progress[i]);
+    const unlocked = !!progress[i];
     const row = document.createElement("div");
     row.id = `manage-row-${i}`;
     row.style =
@@ -423,21 +476,25 @@ window.adminEditStudent = function (key) {
   container.appendChild(manageList);
 };
 
-window.toggleCasilla = function (key, num) {
+// Solo escribe el nodo del alumno afectado (nada de sobrescribir toda la colección).
+window.toggleCasilla = async function (key, num) {
   if (!users[key]) return;
-  if (!users[key].progress) users[key].progress = {};
+  const progress = normalizeProgress(users[key].progress);
 
-  if (users[key].progress[num]) {
-    delete users[key].progress[num];
+  if (progress[num]) {
+    delete progress[num];
   } else {
-    users[key].progress[num] = true;
+    progress[num] = true;
   }
 
-  window.saveUsers();
-  window.adminEditStudent(key);
+  try {
+    await update(child(usersRef, key), { progress });
+  } catch (err) {
+    alert(`Error al guardar: ${err.message}`);
+  }
 };
 
-window.executeReset = function () {
+window.executeReset = async function () {
   if (currentEditingStudentKey && users[currentEditingStudentKey]) {
     const studentName = users[currentEditingStudentKey].name;
     if (
@@ -445,14 +502,18 @@ window.executeReset = function () {
         `Reset ALL progress for ${sanitizeInput(studentName)}? This cannot be undone.`,
       )
     ) {
-      users[currentEditingStudentKey].progress = {};
-      window.saveUsers();
-      window.adminEditStudent(currentEditingStudentKey);
+      try {
+        await update(child(usersRef, currentEditingStudentKey), {
+          progress: {},
+        });
+      } catch (err) {
+        alert(`Error al guardar: ${err.message}`);
+      }
     }
   }
 };
 
-window.deleteStudentProfile = function () {
+window.deleteStudentProfile = async function () {
   if (currentEditingStudentKey && users[currentEditingStudentKey]) {
     const studentName = users[currentEditingStudentKey].name;
 
@@ -461,8 +522,11 @@ window.deleteStudentProfile = function () {
         `WARNING: Are you sure you want to permanently DELETE the profile for ${studentName}? This action cannot be undone.`,
       )
     ) {
-      delete users[currentEditingStudentKey];
-      window.saveUsers();
+      try {
+        await remove(child(usersRef, currentEditingStudentKey));
+      } catch (err) {
+        alert(`Error al borrar: ${err.message}`);
+      }
       currentEditingStudentKey = null;
       window.showAdminPanel();
     }
@@ -474,7 +538,7 @@ window.viewStudentBoard = function (key) {
   if (!student) return;
   updateAdminNavButtons("board");
 
-  loadStudentSyllabus(student.modality);
+  loadStudentSyllabus(normalizeModality(student.modality));
 
   const formattedModality = formatModalityName(student.modality);
 
@@ -491,14 +555,12 @@ window.viewStudentBoard = function (key) {
   document.getElementById("students-list").innerHTML = html;
 
   setTimeout(
-    () => renderBoard(student.progress || {}, "student-board-view"),
+    () => renderBoard(normalizeProgress(student.progress), "student-board-view"),
     50,
   );
 };
 
 // ====================== LOGIN & SIGNUP ======================
-let isSuccessModal = false;
-let selectedModality = null;
 
 function showBoard() {
   document
@@ -511,10 +573,15 @@ function showBoard() {
 
   loadStudentSyllabus(currentUser.modality);
   renderBoard(currentUser.progress);
+  subscribeStudentProgress();
 }
 
 // ====================== ADMIN MAIN VIEW ======================
 window.showAdminPanel = function () {
+  if (!isAdmin) {
+    alert("Access denied.");
+    return;
+  }
   currentEditingStudentKey = null;
   updateAdminNavButtons("list");
   document
@@ -527,6 +594,7 @@ window.showAdminPanel = function () {
   if (searchInput) searchInput.value = "";
   if (modalitySelect) modalitySelect.value = "";
 
+  subscribeAdminUsers();
   window.renderStudentsList();
 };
 
@@ -536,6 +604,7 @@ function triggerFilter() {
   window.renderStudentsList(text, modality);
 }
 
+// Filtrado en un solo pase (punto C).
 window.renderStudentsList = function (
   filter = "",
   selectedModalityFilter = "",
@@ -545,20 +614,17 @@ window.renderStudentsList = function (
 
   container.innerHTML = "";
 
+  const normalizedFilter = filter.toLowerCase();
   const totalStudents = Object.keys(users).length;
-  let matchCount = 0;
 
-  Object.keys(users).forEach((key) => {
+  const matches = Object.keys(users).filter((key) => {
     const student = users[key];
-    const nameMatches = student.name
+    const nameMatches = (student.name || "")
       .toLowerCase()
-      .includes(filter.toLowerCase());
+      .includes(normalizedFilter);
     const modalityMatches =
       !selectedModalityFilter || student.modality === selectedModalityFilter;
-
-    if (nameMatches && modalityMatches) {
-      matchCount++;
-    }
+    return nameMatches && modalityMatches;
   });
 
   const statsHeader = document.createElement("div");
@@ -577,69 +643,60 @@ window.renderStudentsList = function (
       : "All Modalities";
     statsHtml += `
       <span style="font-size: 1.1rem; font-weight: bold; color: #555555;">
-        (${activeModalityText}): <strong style="color: var(--orange);">${matchCount}</strong>
+        (${activeModalityText}): <strong style="color: var(--orange);">${matches.length}</strong>
       </span>
     `;
   }
   statsHeader.innerHTML = statsHtml;
   container.appendChild(statsHeader);
 
-  let renderMatchCounter = 0;
-  Object.keys(users).forEach((key) => {
-    const student = users[key];
-    const nameMatches = student.name
-      .toLowerCase()
-      .includes(filter.toLowerCase());
-    const modalityMatches =
-      !selectedModalityFilter || student.modality === selectedModalityFilter;
-
-    if (nameMatches && modalityMatches) {
-      renderMatchCounter++;
-      const unlockedCount = Object.keys(student.progress || {}).length;
-      const formattedModality = formatModalityName(student.modality);
-
-      const div = document.createElement("div");
-      div.className = "student-row";
-
-      div.innerHTML = `
-        <div class="student-info">
-            <strong style="font-size: 1.8rem; display: block; color: #000000;">
-                ${sanitizeInput(student.name)}
-            </strong>
-            <span style="color: #767676; margin-top: 4px; font-size: 1.1rem; display: block;">
-                Modality: <strong style="color: var(--orange);">${formattedModality}</strong> | Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
-            </span>
-        </div>
-        <div class="actions" style="display: flex; gap: 10px;"></div>
-      `;
-
-      const actionsDiv = div.querySelector(".actions");
-
-      const viewBtn = document.createElement("button");
-      viewBtn.textContent = "Student Board";
-      viewBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        window.viewStudentBoard(key);
-      });
-
-      const manageBtn = document.createElement("button");
-      manageBtn.textContent = "Manage Student";
-      manageBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        window.adminEditStudent(key);
-      });
-
-      actionsDiv.appendChild(viewBtn);
-      actionsDiv.appendChild(manageBtn);
-      container.appendChild(div);
-    }
-  });
-
-  if (renderMatchCounter === 0) {
+  if (matches.length === 0) {
     container.innerHTML += `
       <p style="text-align:center; color:#888; padding: 2rem;">No students found matching the criteria.</p>
     `;
+    return;
   }
+
+  matches.forEach((key) => {
+    const student = users[key];
+    const unlockedCount = Object.keys(normalizeProgress(student.progress)).length;
+    const formattedModality = formatModalityName(student.modality);
+
+    const div = document.createElement("div");
+    div.className = "student-row";
+
+    div.innerHTML = `
+      <div class="student-info">
+          <strong style="font-size: 1.8rem; display: block; color: #000000;">
+              ${sanitizeInput(student.name)}
+          </strong>
+          <span style="color: #767676; margin-top: 4px; font-size: 1.1rem; display: block;">
+              Modality: <strong style="color: var(--orange);">${formattedModality}</strong> | Unlocked: <strong style="color: #767676;">${unlockedCount}/30</strong>
+          </span>
+      </div>
+      <div class="actions" style="display: flex; gap: 10px;"></div>
+    `;
+
+    const actionsDiv = div.querySelector(".actions");
+
+    const viewBtn = document.createElement("button");
+    viewBtn.textContent = "Student Board";
+    viewBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.viewStudentBoard(key);
+    });
+
+    const manageBtn = document.createElement("button");
+    manageBtn.textContent = "Manage Student";
+    manageBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.adminEditStudent(key);
+    });
+
+    actionsDiv.appendChild(viewBtn);
+    actionsDiv.appendChild(manageBtn);
+    container.appendChild(div);
+  });
 };
 
 window.selectModality = function (modality, btnElement) {
@@ -700,39 +757,52 @@ document.addEventListener("DOMContentLoaded", () => {
   if (searchInput) searchInput.addEventListener("input", triggerFilter);
   if (modalitySelect) modalitySelect.addEventListener("change", triggerFilter);
 
-  // Formularios de Login y Registro
+  // Formulario de Login (alumno)
   const loginForm = document.getElementById("login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      let name = document.getElementById("login-name").value.trim();
-      let pin = document.getElementById("login-pin").value.trim();
-      const key = (name + pin).toLowerCase().replace(/\s/g, "");
+      const name = document.getElementById("login-name").value.trim();
+      const pin = document.getElementById("login-pin").value.trim();
 
-      if (users[key]) {
-        currentUser = {
-          name: users[key].name,
-          key,
-          progress: users[key].progress || {},
-          modality: users[key].modality || "in-person",
-        };
-        showBoard();
-      } else {
-        alert("Student not found. Please Sign Up first.");
+      if (!name || !pin) {
+        alert("Enter your name and PIN.");
+        return;
+      }
+
+      try {
+        const key = await deriveStudentKey(name, pin);
+        const snapshot = await get(child(usersRef, key));
+
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          currentUser = {
+            name: data.name || name,
+            key,
+            progress: normalizeProgress(data.progress),
+            modality: normalizeModality(data.modality),
+          };
+          showBoard();
+        } else {
+          alert("Student not found. Please Sign Up first.");
+        }
+      } catch (err) {
+        alert(`No se pudo iniciar sesión: ${err.message}`);
       }
     });
   }
 
+  // Formulario de Registro (alumno)
   const signupForm = document.getElementById("signup-form");
   if (signupForm) {
-    signupForm.addEventListener("submit", (e) => {
+    signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      let nameInput = document.getElementById("signup-name");
-      let pinInput = document.getElementById("signup-pin");
+      const nameInput = document.getElementById("signup-name");
+      const pinInput = document.getElementById("signup-pin");
 
-      let name = nameInput ? nameInput.value.trim() : "";
-      let pin = pinInput ? pinInput.value.trim() : "";
+      const name = nameInput ? nameInput.value.trim() : "";
+      const pin = pinInput ? pinInput.value : "";
 
       const modal = document.getElementById("casilla-modal");
       const modalTitle = document.getElementById("modal-title");
@@ -752,14 +822,26 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      if (name.length > MAX_NAME_LENGTH) {
+        showSignupAlert(
+          "Invalid Name",
+          `Name must be at most ${MAX_NAME_LENGTH} characters.`,
+        );
+        if (nameInput) nameInput.focus();
+        return;
+      }
+
       if (!pin) {
-        showSignupAlert("Incomplete Data", "Please enter a 4-digit PIN.");
+        showSignupAlert("Incomplete Data", "Please enter a 4-character PIN.");
         if (pinInput) pinInput.focus();
         return;
       }
 
-      if (pin.length !== 4) {
-        showSignupAlert("Invalid PIN", "PIN must be exactly 4 digits.");
+      if (!isValidPin(pin)) {
+        showSignupAlert(
+          "Invalid PIN",
+          "PIN must be exactly 4 characters and cannot contain spaces.",
+        );
         if (pinInput) pinInput.focus();
         return;
       }
@@ -772,20 +854,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const key = (name + pin).toLowerCase().replace(/\s/g, "");
-      if (users[key]) {
-        showSignupAlert("Account Exists", "This student already exists.");
-        return;
+      try {
+        const key = await deriveStudentKey(name, pin);
+        const snapshot = await get(child(usersRef, key));
+
+        if (snapshot.exists()) {
+          showSignupAlert("Account Exists", "This student already exists.");
+          return;
+        }
+
+        await set(child(usersRef, key), {
+          name: name,
+          progress: {},
+          modality: selectedModality,
+        });
+
+        showSignupAlert("Success!", "Account created successfully!", true);
+      } catch (err) {
+        showSignupAlert("Error", `No se pudo crear la cuenta: ${err.message}`);
       }
-
-      users[key] = {
-        name: name,
-        progress: {},
-        modality: selectedModality,
-      };
-
-      window.saveUsers();
-      showSignupAlert("Success!", "Account created successfully!", true);
 
       selectedModality = null;
       signupForm.reset();
@@ -796,10 +883,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Logout
+  // Logout (alumno)
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
+      if (studentProgressUnsubscribe) {
+        studentProgressUnsubscribe();
+        studentProgressUnsubscribe = null;
+      }
       currentUser = null;
       document.getElementById("login-name").value = "";
       document.getElementById("login-pin").value = "";
@@ -814,12 +905,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Autenticación de Admin
+  // Autenticación de Admin (Firebase Auth)
   const adminBtn = document.getElementById("admin-btn");
   if (adminBtn) {
     adminBtn.addEventListener("click", () => {
-      const modal = document.getElementById("admin-login-modal");
-      if (modal) modal.style.display = "flex";
+      if (isAdmin && auth.currentUser) {
+        window.showAdminPanel();
+      } else {
+        const modal = document.getElementById("admin-login-modal");
+        if (modal) modal.style.display = "flex";
+      }
     });
   }
 
@@ -833,22 +928,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const adminSubmitBtn = document.getElementById("admin-login-submit");
   if (adminSubmitBtn) {
-    adminSubmitBtn.addEventListener("click", () => {
-      const name = document.getElementById("admin-user-input").value;
-      const pin = document.getElementById("admin-pin-input").value;
+    adminSubmitBtn.addEventListener("click", async () => {
+      const emailInput = document.getElementById("admin-email-input");
+      const pinInput = document.getElementById("admin-pin-input");
+      const email = emailInput ? emailInput.value.trim() : "";
+      const pin = pinInput ? pinInput.value : "";
 
-      if (name === ADMIN_USER && pin === atob(ADMIN_PIN_BASE64)) {
-        document.getElementById("admin-login-modal").style.display = "none";
-        document.getElementById("admin-user-input").value = "";
-        document.getElementById("admin-pin-input").value = "";
-        window.showAdminPanel();
-      } else {
+      if (!email || !pin) {
+        alert("Enter your email and PIN.");
+        return;
+      }
+
+      try {
+        const credential = await signInWithEmailAndPassword(auth, email, pin);
+        const uid = credential.user.uid;
+        const marker = await get(child(ref(db), `admins/${uid}`));
+
+        if (marker.exists()) {
+          isAdmin = true;
+          document.getElementById("admin-login-modal").style.display = "none";
+          if (emailInput) emailInput.value = "";
+          if (pinInput) pinInput.value = "";
+          subscribeAdminUsers();
+          window.showAdminPanel();
+        } else {
+          await signOut(auth);
+          alert("This account is not authorized as admin.");
+        }
+      } catch (err) {
         alert("Incorrect admin credentials.");
       }
     });
   }
 
-  const adminUserInput = document.getElementById("admin-user-input");
+  const adminEmailInput = document.getElementById("admin-email-input");
   const adminPinInput = document.getElementById("admin-pin-input");
 
   function handleEnterKey(event) {
@@ -857,9 +970,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (adminUserInput)
-    adminUserInput.addEventListener("keypress", handleEnterKey);
+  if (adminEmailInput)
+    adminEmailInput.addEventListener("keypress", handleEnterKey);
   if (adminPinInput) adminPinInput.addEventListener("keypress", handleEnterKey);
+
+  // Restauración de sesión admin al recargar
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      get(child(ref(db), `admins/${user.uid}`))
+        .then((snap) => {
+          isAdmin = !!snap.exists();
+        })
+        .catch(() => {
+          isAdmin = false;
+        });
+    } else {
+      isAdmin = false;
+      if (adminUsersUnsubscribe) {
+        adminUsersUnsubscribe();
+        adminUsersUnsubscribe = null;
+      }
+      users = {};
+    }
+  });
 
   // Navegación Básica
   const signupBtn = document.getElementById("signup-btn");
@@ -880,7 +1013,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const adminBackBtn = document.getElementById("admin-back-btn");
   if (adminBackBtn) {
-    adminBackBtn.addEventListener("click", () => {
+    adminBackBtn.addEventListener("click", async () => {
+      if (isAdmin && auth.currentUser) {
+        try {
+          await signOut(auth);
+        } catch (err) {
+          console.error("Error al cerrar sesión admin:", err);
+        }
+      }
+      isAdmin = false;
+      if (adminUsersUnsubscribe) {
+        adminUsersUnsubscribe();
+        adminUsersUnsubscribe = null;
+      }
+      users = {};
       document.getElementById("admin-screen").classList.remove("active");
       document.getElementById("login-screen").classList.add("active");
     });
