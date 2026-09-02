@@ -124,8 +124,6 @@ Traducción:
 - **`users/$key`** → escribir solo si eres admin **o** si el nodo no existe aún (registro). Un alumno **no puede** modificarse su propio progreso.
 - **`.validate`** → solo se guardan datos con la forma correcta (nombre texto, modalidad válida, campos requeridos).
 
-> Nota técnica: en Realtime Database el operador `in` y el método `isObject()` **no existen** (son de Firestore). No los uses en las reglas.
-
 ---
 
 
