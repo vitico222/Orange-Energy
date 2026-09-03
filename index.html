@@ -91,6 +91,7 @@
                 id="login-pin"
                 maxlength="4"
                 placeholder="Password (four digits)"
+                autocomplete="off"
                 required
                 style="width: 100%; padding-right: 40px; margin-bottom: 0"
               />
@@ -137,6 +138,7 @@
                 id="signup-pin"
                 maxlength="4"
                 placeholder="Password (Four digits)"
+                autocomplete="off"
                 required
                 style="width: 100%; padding-right: 40px; margin-bottom: 0"
               />
@@ -342,15 +344,17 @@
           Admin Access
         </h3>
         <input
-          type="password"
-          id="admin-user-input"
-          placeholder="Username"
+          type="email"
+          id="admin-email-input"
+          placeholder="Email"
+          autocomplete="username"
           style="margin-bottom: 10px"
         />
         <input
           type="password"
           id="admin-pin-input"
           placeholder="PIN"
+          autocomplete="current-password"
           style="margin-bottom: 20px"
         />
         <div style="display: flex; gap: 10px">
@@ -391,6 +395,10 @@
     </footer>
 
     <script type="module" src="script.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
+      integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>
