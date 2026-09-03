@@ -19,7 +19,7 @@ Reglas clave de la base de datos (versión publicada):
 ```
 /users            → lectura pública (nombres + progreso, sin PINs)
 /users/<clave>    → escritura: solo admin, o si el nodo NO existe todavía (registro)
-/admins/<uid>     → leer solo el propio; escribir solo quien ya es admin
+/admins           → leer: cualquier usuario autenticado (los UID no son secretos); escribir: solo quien ya es admin
 ```
 
 ---
@@ -102,16 +102,16 @@ Las reglas viven en `firebase.json` (o se editan en la consola → Realtime Data
 {
   "rules": {
     "admins": {
+      ".read": "auth != null",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && root.child('admins/' + auth.uid).exists()"
       }
     },
     "users": {
       ".read": true,
       "$key": {
-        ".write": "auth != null && root.child('admins/' + auth.uid).exists() || !data.exists()",
-        ".validate": "newData.val() === null || (newData.hasChildren(['name','modality','progress']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 100 && (newData.child('modality').val() === 'in-person' || newData.child('modality').val() === 'online' || newData.child('modality').val() === 'kids'))"
+        ".write": "(!data.exists()) || (auth != null && root.child('admins/' + auth.uid).exists())",
+        ".validate": "newData.val() === null || (newData.hasChild('name') && newData.hasChild('modality') && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 100 && (newData.child('modality').val() === 'in-person' || newData.child('modality').val() === 'online' || newData.child('modality').val() === 'kids'))"
       }
     }
   }
@@ -119,9 +119,10 @@ Las reglas viven en `firebase.json` (o se editan en la consola → Realtime Data
 ```
 
 Traducción:
-- **`admins/$uid`** → cada quien lee solo su propio marcador; solo un admin puede añadir/quitar admins.
+- **`admins` (padre)** → `.read: auth != null`: cualquier usuario autenticado puede leer la lista de admins (los UID no son secretos; saberlos no da acceso). Escritura: solo quien **ya es admin**.
+- **`admins/$uid`** → `.write`: solo si el UID autenticado ya está en `/admins` (no se puede auto-añadir).
 - **`users` (padre)** → `.read: true`: la lista es pública (ver limitaciones abajo).
-- **`users/$key`** → escribir solo si eres admin **o** si el nodo no existe aún (registro). Un alumno **no puede** modificarse su propio progreso.
+- **`users/$key`** → `.write`: paréntesis explícitos: se puede **crear** un nodo que no existe (`!data.exists()`, el registro), o **modificar** uno existente solo siendo admin. Un alumno **no puede** modificarse su propio progreso.
 - **`.validate`** → solo se guardan datos con la forma correcta (nombre texto, modalidad válida, campos requeridos).
 
 ---
