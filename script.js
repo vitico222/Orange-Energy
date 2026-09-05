@@ -440,7 +440,7 @@ window.adminEditStudent = function (key) {
 
   const viewBoardBtn = document.createElement("button");
   viewBoardBtn.style =
-    "background: #767676; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;";
+    "background: #FF6200; padding: 12px 26px; font-size: 1.1rem; border-radius: 12px; width: auto; margin: 0;";
   viewBoardBtn.textContent = "Student Board";
   viewBoardBtn.addEventListener("click", () => window.viewStudentBoard(key));
 
