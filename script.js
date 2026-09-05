@@ -91,7 +91,9 @@ function normalizeProgress(progress) {
 
 // PIN: exactamente 4 caracteres y sin espacios (las letras están permitidas)
 function isValidPin(pin) {
-  return typeof pin === "string" && new RegExp(`^\\S{${PIN_LENGTH}}$`).test(pin);
+  return (
+    typeof pin === "string" && new RegExp(`^\\S{${PIN_LENGTH}}$`).test(pin)
+  );
 }
 
 // ====================== DERIVACIÓN DE CLAVE (el PIN nunca se guarda) ======================
@@ -464,7 +466,7 @@ window.adminEditStudent = function (key) {
     `;
 
     const lockBtn = document.createElement("button");
-    lockBtn.style = `background: ${unlocked ? "#960707" : "#FF6200"}; color: white; padding: 12px 24px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.05rem; margin: 0; width: auto; min-width: 130px;`;
+    lockBtn.style = `background: ${unlocked ? "#FF6200" : "#808080"}; color: white; padding: 12px 24px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.05rem; margin: 0; width: auto; min-width: 130px;`;
     lockBtn.textContent = unlocked ? "🔒 Lock" : "🔓 Unlock";
 
     lockBtn.addEventListener("click", () => window.toggleCasilla(key, i));
@@ -555,7 +557,8 @@ window.viewStudentBoard = function (key) {
   document.getElementById("students-list").innerHTML = html;
 
   setTimeout(
-    () => renderBoard(normalizeProgress(student.progress), "student-board-view"),
+    () =>
+      renderBoard(normalizeProgress(student.progress), "student-board-view"),
     50,
   );
 };
@@ -659,7 +662,9 @@ window.renderStudentsList = function (
 
   matches.forEach((key) => {
     const student = users[key];
-    const unlockedCount = Object.keys(normalizeProgress(student.progress)).length;
+    const unlockedCount = Object.keys(
+      normalizeProgress(student.progress),
+    ).length;
     const formattedModality = formatModalityName(student.modality);
 
     const div = document.createElement("div");
